@@ -211,7 +211,7 @@ def get_yearly_indicators():
             patents = data["patents"][i]
             rows.append({
                 "technology_id": tech_id,
-                "technology_name": domain_name.replace("_", " ").title(),
+                "technology_name": "Generative AI" if domain_name == "generative_ai" else domain_name.replace("_", " ").title(),
                 "domain": domain_name,
                 "year": year,
                 "patent_count": patents,
@@ -293,7 +293,7 @@ def get_forecasts():
     forecasts = []
 
     for domain_name, data in counts.items():
-        tech_name = domain_name.replace("_", " ").title()
+        tech_name = "Generative AI" if domain_name == "generative_ai" else domain_name.replace("_", " ").title()
         papers = data["papers"]
         patents = data["patents"]
 

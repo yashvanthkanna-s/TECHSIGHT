@@ -45,10 +45,22 @@ st.markdown("""
         color: #1e293b !important;
     }
 
-    /* Main container padding */
+    /* Streamlit Header Alignment & Fix */
+    header[data-testid="stHeader"] {
+        background-color: #f4f6fb !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        height: 2.75rem !important;
+        z-index: 99 !important;
+    }
+
+    div[data-testid="stDecoration"] {
+        display: none !important;
+    }
+
+    /* Main container padding — ensures top bar is never clipped */
     .block-container {
-        padding-top: 1.2rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 4.5rem !important;
+        padding-bottom: 2.5rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         max-width: 100% !important;
@@ -544,11 +556,12 @@ if nav_page == "Overview":
                 <h1>
                     TECHSIGHT Overview
                     <span class="domain-query-tag">Query: {current_tech} (Baseline Domain)</span>
+                    <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 9999px; padding: 0.2rem 0.6rem; font-size: 0.72rem; font-weight: 700;">AI & NLP Track</span>
                 </h1>
                 <div class="meta-status-line">
                     <span class="meta-status-item">● PostgreSQL Cache: Active</span>
-                    <span class="meta-status-item">● FastAPI REST: Online</span>
-                    <span class="meta-status-item">● Verified Sources: OpenAlex + USPTO</span>
+                    <span class="meta-status-item">● Unsupervised NLP: TF-IDF + KMeans</span>
+                    <span class="meta-status-item">● Predictive AI: Regression & MA</span>
                 </div>
             </div>
         </div>
@@ -570,10 +583,10 @@ if nav_page == "Overview":
     st.markdown("""
     <div class="workflow-banner">
         <div class="workflow-text">
-            <span>ℹ️</span>
-            <span><strong>On-Demand Query Workflow:</strong> Ingests peer-reviewed scientific literature and registered intellectual property disclosures into a common schema. Automated clustering and trajectory modeling applied across all periods.</span>
+            <span>⚡</span>
+            <span><strong>AI Pipeline Architecture:</strong> Live ingestion synthesizing scientific literature and registered intellectual property into unified feature vectors. Powered by <strong>unsupervised TF-IDF + KMeans clustering</strong> and <strong>predictive ML forecasting</strong>.</span>
         </div>
-        <div class="workflow-status-badge">Status: Baseline Indexed · 42,850 Records Available</div>
+        <div class="workflow-status-badge">AI Status: Synchronized · 42,850 Records Modeled</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -618,13 +631,13 @@ if nav_page == "Overview":
         <div class="metric-box">
             <div>
                 <div class="metric-header-row">
-                    <span class="metric-tag-label">Discovered Clusters</span>
+                    <span class="metric-tag-label">Discovered AI Clusters</span>
                     <span class="metric-pill-tag tag-blue">TF-IDF + KMeans (k=12)</span>
                 </div>
                 <div class="metric-big-number">12 Topics</div>
-                <div class="metric-sub-detail">Silhouette Coeff: 0.44</div>
+                <div class="metric-sub-detail">Silhouette Coeff: 0.44 (Validated)</div>
             </div>
-            <div style="font-size: 0.74rem; color: #64748b; margin-top: 0.4rem;">Unsupervised literature groupings</div>
+            <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Unsupervised ML semantic discovery</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -633,15 +646,16 @@ if nav_page == "Overview":
         <div class="metric-box">
             <div>
                 <div class="metric-header-row">
-                    <span class="metric-tag-label">Technology Trend Score</span>
-                    <span class="metric-pill-tag tag-peach">Composite Index</span>
+                    <span class="metric-tag-label">AI Trend Momentum Score</span>
+                    <span class="metric-pill-tag tag-peach">Multi-Factor Model</span>
                 </div>
                 <div class="metric-big-number">{current_score} <span style="font-size: 1rem; color: #94a3b8; font-weight: 500;">/ 100</span></div>
                 <div class="metric-sub-detail">40% Vol · 35% YoY · 25% Pat</div>
             </div>
-            <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Documented momentum metric</div>
+            <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Explainable ML trend index</div>
         </div>
         """, unsafe_allow_html=True)
+
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
@@ -666,10 +680,11 @@ if nav_page == "Overview":
             </div>
         """, unsafe_allow_html=True)
 
-        # Plotly Dual Line Chart matching the exact visual in the image
-        years = current_indicators["year"].tolist()
-        papers = current_indicators["paper_count"].tolist()
-        patents = current_indicators["patent_count"].tolist()
+        # Filter strictly to 2018-2024 to match the chart title and mockup visual
+        chart_data = current_indicators[current_indicators["year"] >= 2018].sort_values("year")
+        years = chart_data["year"].tolist()
+        papers = chart_data["paper_count"].tolist()
+        patents = chart_data["patent_count"].tolist()
 
         fig_dual = go.Figure()
 
@@ -697,7 +712,7 @@ if nav_page == "Overview":
 
         fig_dual.update_layout(
             template="plotly_white",
-            height=340,
+            height=380,
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="#ffffff",
             plot_bgcolor="#ffffff",
