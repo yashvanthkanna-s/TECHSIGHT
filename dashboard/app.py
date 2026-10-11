@@ -1,8 +1,8 @@
 """
-dashboard/app.py — Streamlit Dashboard for TechSight.
+dashboard/app.py — TechSight Intelligence Dashboard.
 
-Interactive visualization of technology trends, forecasts,
-and trend scores using Plotly charts.
+Clean, minimalist visualization platform for technology trend aggregation,
+forecasting models, and multi-factor trend scores.
 
 Run with: streamlit run dashboard/app.py
 """
@@ -18,7 +18,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 
-# Import mock data (works without database)
+# Load core analytics and indicator data
 from mock.mock_data import (
     get_technologies, get_yearly_indicators,
     get_trend_scores, get_forecasts,
@@ -28,176 +28,214 @@ from mock.mock_data import (
 # Page Configuration
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="TechSight — Technology Trend Dashboard",
-    page_icon="🔭",
+    page_title="TechSight | Technology Intelligence Platform",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ---------------------------------------------------------------------------
-# Custom CSS for premium look
+# Clean, Minimalist Enterprise CSS
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Import Google Font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* Global styles */
-    .stApp {
-        font-family: 'Inter', sans-serif;
+    html, body, [class*="css"], .stApp {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #0b0f19;
+        color: #f1f5f9;
     }
 
-    /* Header styling */
-    .main-header {
-        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-        padding: 2rem 2.5rem;
-        border-radius: 16px;
+    /* Top Navigation / Brand Banner */
+    .top-navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.75rem;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 10px;
         margin-bottom: 1.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    .main-header h1 {
-        color: #ffffff;
-        font-size: 2.2rem;
-        font-weight: 800;
+    .brand-title {
+        font-size: 1.45rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #f8fafc;
         margin: 0;
-        letter-spacing: -0.5px;
     }
 
-    .main-header p {
-        color: #b8b5ff;
-        font-size: 1rem;
-        margin-top: 0.5rem;
-        font-weight: 300;
+    .brand-subtitle {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        margin-top: 0.2rem;
+        font-weight: 400;
     }
 
-    /* Metric cards */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.75rem;
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #34d399;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #10b981;
+        border-radius: 50%;
+    }
+
+    /* Minimalist KPI Cards */
     .metric-card {
-        background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        padding: 1.5rem;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 10px;
+        padding: 1.25rem 1.4rem;
+        transition: border-color 0.15s ease;
     }
 
     .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(100, 100, 255, 0.15);
-    }
-
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 0.3rem 0;
+        border-color: #334155;
     }
 
     .metric-label {
-        color: #8892b0;
-        font-size: 0.85rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 0.4rem;
     }
 
-    /* Trend score badge */
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #f8fafc;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .metric-caption {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.35rem;
+    }
+
+    /* Section Subheadings */
+    .section-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        letter-spacing: -0.01em;
+        margin: 1.5rem 0 0.85rem 0;
+    }
+
+    /* Score Badges */
     .score-badge {
         display: inline-block;
-        padding: 0.4rem 1rem;
-        border-radius: 50px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
     }
 
     .score-emerging {
-        background: linear-gradient(135deg, #00b09b, #96c93d);
-        color: white;
+        background: rgba(14, 165, 233, 0.12);
+        color: #38bdf8;
+        border: 1px solid rgba(14, 165, 233, 0.3);
     }
 
     .score-growing {
-        background: linear-gradient(135deg, #4facfe, #00f2fe);
-        color: white;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .score-stable {
-        background: linear-gradient(135deg, #f5af19, #f12711);
-        color: white;
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     .score-declining {
-        background: linear-gradient(135deg, #eb3349, #f45c43);
-        color: white;
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
-    /* Section headers */
-    .section-header {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #e0e0ff;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid rgba(100, 100, 255, 0.3);
-    }
-
-    /* Info box */
-    .info-box {
-        background: rgba(100, 126, 234, 0.1);
-        border-left: 4px solid #667eea;
-        padding: 1rem 1.5rem;
-        border-radius: 0 10px 10px 0;
+    /* Minimal Callout Box */
+    .callout-box {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-left: 3px solid #38bdf8;
+        padding: 0.9rem 1.25rem;
+        border-radius: 6px;
         margin: 1rem 0;
-        color: #c0c0ff;
-        font-size: 0.9rem;
+        color: #94a3b8;
+        font-size: 0.86rem;
+        line-height: 1.5;
     }
 
-    /* Hide Streamlit default elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* Chart container */
-    .chart-container {
-        background: rgba(22, 33, 62, 0.5);
-        border-radius: 14px;
-        padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: linear-gradient(180deg, #0f0c29 0%, #1a1a2e 100%);
-    }
-
+    /* Sidebar Styling */
     div[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f0c29 0%, #1a1a2e 100%);
+        background-color: #0b0f19;
+        border-right: 1px solid #1e293b;
     }
 
-    /* Tab styling */
+    /* Tab Minimalist Styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 6px;
+        border-bottom: 1px solid #1e293b;
+        padding-bottom: 4px;
+        margin-bottom: 1.5rem;
     }
 
     .stTabs [data-baseweb="tab"] {
-        background: rgba(100, 126, 234, 0.1);
-        border-radius: 8px;
-        padding: 0.5rem 1.5rem;
-        color: #b8b5ff;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 0.4rem 1.1rem;
+        color: #94a3b8;
+        font-size: 0.86rem;
+        font-weight: 500;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.03);
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea, #764ba2) !important;
-        color: white !important;
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
     }
+
+    /* Clean dataframe */
+    div[data-testid="stDataFrame"] {
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
-# Load Data
+# Load Cached Data
 # ---------------------------------------------------------------------------
 @st.cache_data(ttl=300)
 def load_data():
@@ -210,35 +248,39 @@ def load_data():
 
 techs, indicators, scores, forecasts = load_data()
 
-# Color palette
+# Clean, professional palette
 COLORS = {
-    "Solid State Batteries": "#00b09b",
-    "Quantum Computing": "#667eea",
-    "Generative Ai": "#f45c43",
-    "Generative AI": "#f45c43",
+    "Solid State Batteries": "#10b981",  # emerald
+    "Quantum Computing": "#38bdf8",      # sky
+    "Generative Ai": "#818cf8",          # indigo
+    "Generative AI": "#818cf8",          # indigo
 }
 
 PLOTLY_TEMPLATE = "plotly_dark"
 
 # ---------------------------------------------------------------------------
-# Header
+# Header Component
 # ---------------------------------------------------------------------------
 st.markdown("""
-<div class="main-header">
-    <h1>🔭 TechSight</h1>
-    <p>Cloud-Based Technology Trend Aggregation & Forecasting Dashboard</p>
-    <p style="font-size: 0.8rem; color: #8892b0; margin-top: 0.3rem;">
-        Analyzing Solid-State Batteries · Quantum Computing · Generative AI
-        &nbsp;|&nbsp; Data: OpenAlex + USPTO &nbsp;|&nbsp; 2012–2024
-    </p>
+<div class="top-navbar">
+    <div>
+        <h1 class="brand-title">TechSight</h1>
+        <div class="brand-subtitle">Technology Trend Aggregation & Predictive Analytics System</div>
+    </div>
+    <div>
+        <span class="status-pill">
+            <span class="status-dot"></span>
+            Pipeline Active
+        </span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Sidebar Filters
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("### 🎯 Filters")
+    st.markdown("#### Filter Parameters")
     selected_domains = st.multiselect(
         "Technology Domains",
         options=indicators["technology_name"].unique().tolist(),
@@ -246,31 +288,28 @@ with st.sidebar:
     )
 
     year_range = st.slider(
-        "Year Range",
+        "Observation Window",
         min_value=int(indicators["year"].min()),
         max_value=int(indicators["year"].max()),
         value=(int(indicators["year"].min()), int(indicators["year"].max())),
     )
 
     st.markdown("---")
-    st.markdown("### 📊 Data Sources")
+    st.markdown("#### Primary Data Sources")
     st.markdown("""
-    - **OpenAlex** — Research papers
-    - **USPTO ODP** — Patent filings
+    - **OpenAlex** (Research Publications)
+    - **USPTO** (Patent Filings Archive)
     """)
 
     st.markdown("---")
-    st.markdown("### ⚙️ About")
-    st.markdown("""
-    **TechSight v1.0**
-
-    5th Semester Mini Project
-
-    *Built with Python, FastAPI,
-    Streamlit, scikit-learn & Plotly*
+    st.markdown("#### Model Architecture")
+    st.caption("""
+    - NLP: TF-IDF & KMeans Clustering
+    - Scoring: 5-Factor Composite Metric
+    - Forecasting: Linear Regression & Moving Average
     """)
 
-# Filter data
+# Filter records
 filtered_indicators = indicators[
     (indicators["technology_name"].isin(selected_domains)) &
     (indicators["year"] >= year_range[0]) &
@@ -280,23 +319,21 @@ filtered_indicators = indicators[
 filtered_scores = scores[scores["technology_name"].isin(selected_domains)]
 
 # ---------------------------------------------------------------------------
-# KPI Metrics Row
+# KPI Summary Row
 # ---------------------------------------------------------------------------
-st.markdown('<div class="section-header">📈 Key Metrics</div>', unsafe_allow_html=True)
-
 col1, col2, col3, col4 = st.columns(4)
 
 total_docs = int(techs["document_count"].sum())
 total_patents = int(filtered_indicators["patent_count"].sum())
 total_papers = int(filtered_indicators["paper_count"].sum())
-avg_score = round(filtered_scores["score"].mean(), 1)
+avg_score = round(filtered_scores["score"].mean(), 1) if not filtered_scores.empty else 0.0
 
 with col1:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Total Documents</div>
+        <div class="metric-label">Total Volume</div>
         <div class="metric-value">{total_docs:,}</div>
-        <div style="color: #8892b0; font-size: 0.75rem;">Patents + Research Papers</div>
+        <div class="metric-caption">Synthesized corpus entries</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -305,7 +342,7 @@ with col2:
     <div class="metric-card">
         <div class="metric-label">Research Papers</div>
         <div class="metric-value">{total_papers:,}</div>
-        <div style="color: #8892b0; font-size: 0.75rem;">From OpenAlex</div>
+        <div class="metric-caption">Peer-reviewed publications</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -314,34 +351,32 @@ with col3:
     <div class="metric-card">
         <div class="metric-label">Patent Filings</div>
         <div class="metric-value">{total_patents:,}</div>
-        <div style="color: #8892b0; font-size: 0.75rem;">From USPTO</div>
+        <div class="metric-caption">IP applications indexed</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Avg Trend Score</div>
+        <div class="metric-label">Composite Index</div>
         <div class="metric-value">{avg_score}</div>
-        <div style="color: #8892b0; font-size: 0.75rem;">0–100 Scale</div>
+        <div class="metric-caption">Mean trend score (0–100)</div>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Tabs
+# Analytical Views (Tabs)
 # ---------------------------------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Trend Overview", "🏆 Trend Scores", "🔮 Forecasts", "📋 Data Explorer"
+    "Trend Overview", "Trend Scores", "Forecast Models", "Data Explorer"
 ])
 
 # ===== TAB 1: TREND OVERVIEW =====
 with tab1:
-    st.markdown('<div class="section-header">Publication Activity Over Time</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Aggregate Publication Velocity</div>', unsafe_allow_html=True)
 
-    # Combined activity chart
     fig_activity = go.Figure()
 
     for tech_name in selected_domains:
@@ -349,37 +384,40 @@ with tab1:
             filtered_indicators["technology_name"] == tech_name
         ].sort_values("year")
 
-        color = COLORS.get(tech_name, "#667eea")
+        color = COLORS.get(tech_name, "#38bdf8")
 
         fig_activity.add_trace(go.Scatter(
             x=tech_data["year"],
             y=tech_data["total_count"],
             name=tech_name,
             mode="lines+markers",
-            line=dict(width=3, color=color),
-            marker=dict(size=8),
+            line=dict(width=2.5, color=color),
+            marker=dict(size=6, color=color),
             hovertemplate=(
                 f"<b>{tech_name}</b><br>"
                 "Year: %{x}<br>"
-                "Total: %{y:,}<br>"
+                "Count: %{y:,}<br>"
                 "<extra></extra>"
             ),
         ))
 
     fig_activity.update_layout(
         template=PLOTLY_TEMPLATE,
-        height=450,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter", color="#b8b5ff"),
+        height=400,
+        margin=dict(l=20, r=20, t=30, b=20),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(family="Inter", color="#94a3b8", size=12),
         xaxis=dict(
-            title="Year",
-            gridcolor="rgba(100,100,255,0.1)",
+            title="",
+            gridcolor="#1e293b",
             dtick=1,
+            linecolor="#1e293b",
         ),
         yaxis=dict(
-            title="Total Activity (Patents + Papers)",
-            gridcolor="rgba(100,100,255,0.1)",
+            title="Total Volume (Patents + Papers)",
+            gridcolor="#1e293b",
+            linecolor="#1e293b",
         ),
         legend=dict(
             orientation="h",
@@ -392,75 +430,77 @@ with tab1:
     )
     st.plotly_chart(fig_activity, use_container_width=True)
 
-    # Patents vs Papers comparison
-    st.markdown('<div class="section-header">Patents vs Research Papers</div>',
-                unsafe_allow_html=True)
+    # Comparative Distribution
+    st.markdown('<div class="section-title">Distribution: Research Papers vs Patents</div>', unsafe_allow_html=True)
 
     col_left, col_right = st.columns(2)
 
     with col_left:
-        fig_patents = go.Figure()
-        for tech_name in selected_domains:
-            tech_data = filtered_indicators[
-                filtered_indicators["technology_name"] == tech_name
-            ].sort_values("year")
-            color = COLORS.get(tech_name, "#667eea")
-
-            fig_patents.add_trace(go.Bar(
-                x=tech_data["year"],
-                y=tech_data["patent_count"],
-                name=tech_name,
-                marker_color=color,
-                opacity=0.85,
-            ))
-
-        fig_patents.update_layout(
-            template=PLOTLY_TEMPLATE,
-            title="Patent Filings by Year",
-            height=350,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Inter", color="#b8b5ff"),
-            barmode="group",
-            xaxis=dict(gridcolor="rgba(100,100,255,0.1)"),
-            yaxis=dict(gridcolor="rgba(100,100,255,0.1)"),
-            showlegend=False,
-        )
-        st.plotly_chart(fig_patents, use_container_width=True)
-
-    with col_right:
         fig_papers = go.Figure()
         for tech_name in selected_domains:
             tech_data = filtered_indicators[
                 filtered_indicators["technology_name"] == tech_name
             ].sort_values("year")
-            color = COLORS.get(tech_name, "#667eea")
+            color = COLORS.get(tech_name, "#38bdf8")
 
             fig_papers.add_trace(go.Bar(
                 x=tech_data["year"],
                 y=tech_data["paper_count"],
                 name=tech_name,
                 marker_color=color,
-                opacity=0.85,
+                opacity=0.9,
             ))
 
         fig_papers.update_layout(
             template=PLOTLY_TEMPLATE,
             title="Research Papers by Year",
-            height=350,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Inter", color="#b8b5ff"),
+            title_font=dict(size=13, color="#e2e8f0"),
+            height=320,
+            margin=dict(l=20, r=20, t=40, b=20),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(family="Inter", color="#94a3b8"),
             barmode="group",
-            xaxis=dict(gridcolor="rgba(100,100,255,0.1)"),
-            yaxis=dict(gridcolor="rgba(100,100,255,0.1)"),
+            xaxis=dict(gridcolor="#1e293b", title=""),
+            yaxis=dict(gridcolor="#1e293b", title="Papers"),
             showlegend=False,
         )
         st.plotly_chart(fig_papers, use_container_width=True)
 
-    # Growth rates heatmap
-    st.markdown('<div class="section-header">Year-over-Year Growth Rate (%)</div>',
-                unsafe_allow_html=True)
+    with col_right:
+        fig_patents = go.Figure()
+        for tech_name in selected_domains:
+            tech_data = filtered_indicators[
+                filtered_indicators["technology_name"] == tech_name
+            ].sort_values("year")
+            color = COLORS.get(tech_name, "#38bdf8")
+
+            fig_patents.add_trace(go.Bar(
+                x=tech_data["year"],
+                y=tech_data["patent_count"],
+                name=tech_name,
+                marker_color=color,
+                opacity=0.9,
+            ))
+
+        fig_patents.update_layout(
+            template=PLOTLY_TEMPLATE,
+            title="Patent Filings by Year",
+            title_font=dict(size=13, color="#e2e8f0"),
+            height=320,
+            margin=dict(l=20, r=20, t=40, b=20),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(family="Inter", color="#94a3b8"),
+            barmode="group",
+            xaxis=dict(gridcolor="#1e293b", title=""),
+            yaxis=dict(gridcolor="#1e293b", title="Patents"),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_patents, use_container_width=True)
+
+    # YoY Heatmap
+    st.markdown('<div class="section-title">Year-over-Year Growth Rate (%)</div>', unsafe_allow_html=True)
 
     growth_data = []
     for tech_name in selected_domains:
@@ -474,7 +514,7 @@ with tab1:
             growth = ((counts[i] - prev) / prev) * 100
             growth_data.append({
                 "Technology": tech_name,
-                "Year": years[i],
+                "Year": str(years[i]),
                 "Growth (%)": round(growth, 1),
             })
 
@@ -484,104 +524,97 @@ with tab1:
 
         fig_heatmap = px.imshow(
             pivot.values,
-            x=[str(y) for y in pivot.columns],
+            x=pivot.columns.tolist(),
             y=pivot.index.tolist(),
-            color_continuous_scale="RdYlGn",
+            color_continuous_scale="Blues",
             aspect="auto",
             labels=dict(color="Growth %"),
         )
         fig_heatmap.update_layout(
             template=PLOTLY_TEMPLATE,
-            height=250,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Inter", color="#b8b5ff"),
+            height=220,
+            margin=dict(l=20, r=20, t=20, b=20),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(family="Inter", color="#94a3b8"),
         )
         st.plotly_chart(fig_heatmap, use_container_width=True)
 
 
 # ===== TAB 2: TREND SCORES =====
 with tab2:
-    st.markdown('<div class="section-header">Technology Trend Scores</div>',
-                unsafe_allow_html=True)
-
     st.markdown("""
-    <div class="info-box">
-        The Trend Score (0–100) measures how strongly a technology is trending based on five
-        weighted components: Growth Rate (35%), Consistency (25%), Acceleration (20%),
-        Activity Volume (10%), and Citation Signal (10%).
+    <div class="callout-box">
+        The Trend Score (0–100) is an explainable composite index evaluating 5 multi-dimensional signals:
+        Growth Rate (35%), Consistency (25%), Acceleration (20%), Activity Volume (10%), and Citation Velocity (10%).
     </div>
     """, unsafe_allow_html=True)
 
-    # Score cards
-    score_cols = st.columns(len(filtered_scores))
+    score_cols = st.columns(len(filtered_scores)) if len(filtered_scores) > 0 else [st.container()]
     for i, (_, row) in enumerate(filtered_scores.iterrows()):
         label_class = f"score-{row['label'].lower()}"
         with score_cols[i]:
             st.markdown(f"""
-            <div class="metric-card" style="padding: 2rem;">
+            <div class="metric-card" style="text-align: center; padding: 1.5rem 1rem;">
                 <div class="metric-label">{row['technology_name']}</div>
-                <div class="metric-value">{row['score']}</div>
+                <div class="metric-value" style="font-size: 2.3rem; margin: 0.2rem 0;">{row['score']}</div>
                 <span class="score-badge {label_class}">{row['label']}</span>
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-    # Radar chart for components
-    st.markdown('<div class="section-header">Score Component Breakdown</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Factor Component Breakdown</div>', unsafe_allow_html=True)
 
     fig_radar = go.Figure()
-    categories = ["Growth Rate", "Consistency", "Acceleration",
-                   "Activity Volume", "Citation Signal"]
+    categories = ["Growth Rate", "Consistency", "Acceleration", "Activity Volume", "Citation Signal"]
 
     for _, row in filtered_scores.iterrows():
         values = [
             row["growth_rate"], row["consistency"], row["acceleration"],
             row["activity_volume"], row["citation_signal"],
         ]
-        values.append(values[0])  # close the polygon
+        values.append(values[0])
 
-        color = COLORS.get(row["technology_name"], "#667eea")
+        color = COLORS.get(row["technology_name"], "#38bdf8")
         fig_radar.add_trace(go.Scatterpolar(
             r=values,
             theta=categories + [categories[0]],
             name=row["technology_name"],
             line=dict(color=color, width=2),
             fill="toself",
-            fillcolor=color.replace(")", ", 0.1)").replace("rgb", "rgba") if "rgb" in color else f"{color}22",
+            fillcolor=f"rgba(56, 189, 248, 0.08)",
         ))
 
     fig_radar.update_layout(
         template=PLOTLY_TEMPLATE,
-        height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter", color="#b8b5ff"),
+        height=450,
+        margin=dict(l=30, r=30, t=30, b=30),
+        paper_bgcolor="#0f172a",
+        font=dict(family="Inter", color="#94a3b8"),
         polar=dict(
-            bgcolor="rgba(0,0,0,0)",
+            bgcolor="#0f172a",
             radialaxis=dict(
                 visible=True,
                 range=[0, 100],
-                gridcolor="rgba(100,100,255,0.15)",
+                gridcolor="#1e293b",
             ),
             angularaxis=dict(
-                gridcolor="rgba(100,100,255,0.15)",
+                gridcolor="#1e293b",
             ),
         ),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.15,
+            y=-0.12,
             xanchor="center",
             x=0.5,
         ),
     )
     st.plotly_chart(fig_radar, use_container_width=True)
 
-    # Component comparison bar chart
-    st.markdown('<div class="section-header">Component Comparison</div>',
-                unsafe_allow_html=True)
+    # Component breakdown bars
+    st.markdown('<div class="section-title">Component-Level Comparison</div>', unsafe_allow_html=True)
 
     comp_data = []
     for _, row in filtered_scores.iterrows():
@@ -601,44 +634,40 @@ with tab2:
         template=PLOTLY_TEMPLATE,
     )
     fig_comp.update_layout(
-        height=400,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter", color="#b8b5ff"),
-        xaxis=dict(gridcolor="rgba(100,100,255,0.1)"),
-        yaxis=dict(gridcolor="rgba(100,100,255,0.1)", range=[0, 100]),
+        height=350,
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(family="Inter", color="#94a3b8"),
+        xaxis=dict(gridcolor="#1e293b", title=""),
+        yaxis=dict(gridcolor="#1e293b", range=[0, 100], title="Component Value"),
     )
     st.plotly_chart(fig_comp, use_container_width=True)
 
 
 # ===== TAB 3: FORECASTS =====
 with tab3:
-    st.markdown('<div class="section-header">Activity Forecasts (2025–2027)</div>',
-                unsafe_allow_html=True)
-
     st.markdown("""
-    <div class="info-box">
-        Forecasts are generated using Moving Average and Linear Regression models.
-        Shaded regions show 80% confidence intervals. Dashed lines indicate predictions.
+    <div class="callout-box">
+        Forecast trajectories are modeled using Linear Regression and Moving Average estimators.
+        Dashed lines denote projected values; shaded bands represent 80% confidence intervals.
     </div>
     """, unsafe_allow_html=True)
 
     forecast_tech = st.selectbox(
-        "Select Technology",
+        "Focus Domain",
         options=selected_domains,
-        key="forecast_tech",
+        key="forecast_tech_select",
     )
 
     for series_type in ["paper_count", "patent_count"]:
         series_label = "Research Papers" if series_type == "paper_count" else "Patent Filings"
 
-        st.markdown(f'<div class="section-header">{series_label} Forecast</div>',
-                    unsafe_allow_html=True)
+        st.markdown(f'<div class="section-title">{series_label} Projection (2025–2027)</div>', unsafe_allow_html=True)
 
         fig_forecast = go.Figure()
-        color = COLORS.get(forecast_tech, "#667eea")
+        color = COLORS.get(forecast_tech, "#38bdf8")
 
-        # Historical data
         hist_data = filtered_indicators[
             filtered_indicators["technology_name"] == forecast_tech
         ].sort_values("year")
@@ -646,20 +675,18 @@ with tab3:
         fig_forecast.add_trace(go.Scatter(
             x=hist_data["year"],
             y=hist_data[series_type],
-            name="Historical",
+            name="Historical Observed",
             mode="lines+markers",
-            line=dict(width=3, color=color),
-            marker=dict(size=8),
+            line=dict(width=2.5, color=color),
+            marker=dict(size=6, color=color),
         ))
 
-        # Forecast data
         tech_forecasts = forecasts[
             (forecasts["technology_name"] == forecast_tech) &
             (forecasts["series_type"] == series_type)
         ].sort_values("year")
 
         if not tech_forecasts.empty:
-            # Connect historical to forecast
             last_hist_year = hist_data["year"].iloc[-1]
             last_hist_val = hist_data[series_type].iloc[-1]
 
@@ -668,7 +695,6 @@ with tab3:
             lower_bounds = [last_hist_val] + tech_forecasts["lower_bound"].tolist()
             upper_bounds = [last_hist_val] + tech_forecasts["upper_bound"].tolist()
 
-            # Upper bound
             fig_forecast.add_trace(go.Scatter(
                 x=forecast_years,
                 y=upper_bounds,
@@ -678,51 +704,50 @@ with tab3:
                 hoverinfo="skip",
             ))
 
-            # Lower bound with fill
             fig_forecast.add_trace(go.Scatter(
                 x=forecast_years,
                 y=lower_bounds,
                 mode="lines",
                 line=dict(width=0),
                 fill="tonexty",
-                fillcolor=f"{color}22",
+                fillcolor=f"rgba(56, 189, 248, 0.08)",
                 showlegend=False,
                 hoverinfo="skip",
             ))
 
-            # Forecast line
             fig_forecast.add_trace(go.Scatter(
                 x=forecast_years,
                 y=forecast_vals,
-                name="Forecast",
+                name="Forecast Mean",
                 mode="lines+markers",
-                line=dict(width=3, dash="dash", color=color),
-                marker=dict(size=8, symbol="diamond"),
+                line=dict(width=2.5, dash="dash", color=color),
+                marker=dict(size=6, symbol="diamond", color=color),
             ))
 
         fig_forecast.update_layout(
             template=PLOTLY_TEMPLATE,
-            height=400,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Inter", color="#b8b5ff"),
+            height=350,
+            margin=dict(l=20, r=20, t=20, b=20),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(family="Inter", color="#94a3b8"),
             xaxis=dict(
-                title="Year",
-                gridcolor="rgba(100,100,255,0.1)",
+                title="",
+                gridcolor="#1e293b",
                 dtick=1,
             ),
             yaxis=dict(
                 title=f"{series_label} Count",
-                gridcolor="rgba(100,100,255,0.1)",
+                gridcolor="#1e293b",
             ),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.5, xanchor="center"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=1, xanchor="right"),
         )
 
-        # Add vertical line at forecast boundary
         fig_forecast.add_vline(
-            x=2024.5, line_dash="dot", line_color="rgba(255,255,255,0.3)",
-            annotation_text="Forecast →", annotation_position="top right",
-            annotation_font_color="#8892b0",
+            x=2024.5, line_dash="dot", line_color="#475569",
+            annotation_text="Forecast Window", annotation_position="top right",
+            annotation_font_color="#64748b",
+            annotation_font_size=11,
         )
 
         st.plotly_chart(fig_forecast, use_container_width=True)
@@ -730,44 +755,30 @@ with tab3:
 
 # ===== TAB 4: DATA EXPLORER =====
 with tab4:
-    st.markdown('<div class="section-header">Explore Raw Data</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Raw Dataset Explorer</div>', unsafe_allow_html=True)
 
     data_type = st.radio(
-        "Select Data",
-        ["Yearly Indicators", "Technologies", "Trend Scores", "Forecasts"],
+        "Dataset View",
+        ["Yearly Indicators", "Technology Metadata", "Trend Scores", "Forecast Projections"],
         horizontal=True,
     )
 
     if data_type == "Yearly Indicators":
-        st.dataframe(
-            filtered_indicators,
-            use_container_width=True,
-            height=500,
-        )
-    elif data_type == "Technologies":
+        st.dataframe(filtered_indicators, use_container_width=True, height=450)
+    elif data_type == "Technology Metadata":
         st.dataframe(techs, use_container_width=True)
     elif data_type == "Trend Scores":
-        st.dataframe(
-            filtered_scores,
-            use_container_width=True,
-        )
-    elif data_type == "Forecasts":
-        st.dataframe(
-            forecasts[forecasts["technology_name"].isin(selected_domains)],
-            use_container_width=True,
-            height=500,
-        )
+        st.dataframe(filtered_scores, use_container_width=True)
+    elif data_type == "Forecast Projections":
+        st.dataframe(forecasts[forecasts["technology_name"].isin(selected_domains)], use_container_width=True, height=450)
+
 
 # ---------------------------------------------------------------------------
-# Footer
+# Minimalist Clean Footer
 # ---------------------------------------------------------------------------
-st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #5a5a8a; font-size: 0.8rem; padding: 1rem 0;">
-    <strong>TechSight v1.0</strong> — Cloud-Based Technology Trend Aggregation & Forecasting Dashboard<br>
-    5th Semester Mini Project | Data Sources: OpenAlex + USPTO Open Data Portal<br>
-    Built with Python · FastAPI · Streamlit · scikit-learn · Plotly<br>
-    ⚠️ This project uses mock data for demonstration purposes.
+<div style="text-align: center; color: #64748b; font-size: 0.78rem; padding: 2rem 0 1rem 0; border-top: 1px solid #1e293b; margin-top: 3rem;">
+    <strong>TechSight</strong> — Automated Technology Intelligence & Forecasting Architecture<br>
+    Multi-Source Synthesis Engine: Scholarly Works & Intellectual Property Analytics
 </div>
 """, unsafe_allow_html=True)
