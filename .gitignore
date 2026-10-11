@@ -218,3 +218,26 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# TechSight — Project-specific ignores
+# ============================================================
+
+# Real data files (never commit API responses or processed data)
+data/raw/*
+data/processed/*
+data/fallback/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/fallback/.gitkeep
+
+# Environment secrets
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store

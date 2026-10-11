@@ -1,0 +1,3 @@
+# This directory stores a copy of real processed data for exam-day fallback.
+# Created in Stage 9 after the full pipeline runs successfully.
+# Label: SAVED REAL DATA — not live, snapshot from [date].
