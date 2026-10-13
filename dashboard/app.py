@@ -693,6 +693,7 @@ if nav_page == "Overview":
     m1, m2, m3, m4 = st.columns(4)
 
     total_papers = int(current_indicators["paper_count"].sum()) if not current_indicators.empty else 0
+    total_patents = int(current_indicators["patent_count"].sum()) if ("patent_count" in current_indicators.columns and not current_indicators.empty) else 0
     if not current_indicators.empty:
         if "growth_pct" in current_indicators.columns:
             yoy_pct = float(current_indicators["growth_pct"].iloc[-1])
