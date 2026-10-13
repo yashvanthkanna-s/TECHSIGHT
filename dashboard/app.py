@@ -17,12 +17,21 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
+import textwrap
+
 # Load analytics data
 from mock.mock_data import (
     get_technologies, get_yearly_indicators,
     get_trend_scores, get_forecasts,
 )
 from analytics.live_search import execute_live_search
+
+
+def render_html(html_str):
+    """Safely render HTML without spurious markdown 4-space code block interpretation."""
+    cleaned = textwrap.dedent(html_str).strip()
+    safe_html = "\n".join(line.lstrip() for line in cleaned.splitlines())
+    st.markdown(safe_html, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Page Configuration
@@ -456,7 +465,7 @@ if "search_input_val" not in st.session_state:
 # Sidebar (Matches the left navigation panel in image)
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("""
+    render_html("""
     <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
         <div style="width: 28px; height: 28px; background: #4f46e5; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 13px;">
             TS
@@ -466,9 +475,9 @@ with st.sidebar:
             <div class="sidebar-brand-sub">PATENT & RESEARCH INTELLIGENCE</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
-    st.markdown('<div class="sidebar-section-label">Live Technology Search</div>', unsafe_allow_html=True)
+    render_html('<div class="sidebar-section-label">Live Technology Search</div>')
     search_input_val = st.text_input(
         "Search Keyword",
         value=st.session_state["search_input_val"],
@@ -493,7 +502,7 @@ with st.sidebar:
         st.session_state["search_input_val"] = ""
         st.rerun()
 
-    st.markdown('<div class="sidebar-section-label">Baseline Index Presets</div>', unsafe_allow_html=True)
+    render_html('<div class="sidebar-section-label">Baseline Index Presets</div>')
     domain_options = ["Generative AI", "Quantum Computing", "Solid-State Batteries"]
     selected_domain = st.selectbox(
         "Select Domain Preset",
@@ -504,14 +513,14 @@ with st.sidebar:
     )
 
     if st.session_state["active_live_query"]:
-        st.markdown(f"""
+        render_html(f"""
         <div style="margin: 0.5rem 0; padding: 0.5rem 0.7rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.72rem; color: #1e40af;">
             <div style="font-weight: 700; margin-bottom: 0.15rem;">Active Live Search:</div>
             <div>&ldquo;{st.session_state['active_live_query']}&rdquo; (OpenAlex)</div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
-    st.markdown("""
+    render_html("""
     <div style="margin: 0.75rem 0; padding: 0.6rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.72rem; color: #475569;">
         <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.25rem;">Query Mode: OpenAlex + Patent APIs</div>
         <div style="display: flex; gap: 0.4rem; align-items: center;">
@@ -519,9 +528,9 @@ with st.sidebar:
             <span>Verified endpoints</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
-    st.markdown('<div class="sidebar-section-label">Navigation</div>', unsafe_allow_html=True)
+    render_html('<div class="sidebar-section-label">Navigation</div>')
     nav_page = st.radio(
         "Navigation",
         options=["Overview", "Technology Trends", "Topic Explorer", "Forecasting"],
@@ -529,15 +538,15 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    st.markdown("<hr style='border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0 0.75rem 0;'>", unsafe_allow_html=True)
-    st.markdown("""
+    render_html("<hr style='border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0 0.75rem 0;'>")
+    render_html("""
     <div style="font-size: 0.73rem; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
         <span>Pipeline Status</span>
         <span style="color: #059669; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
             <span class="status-dot-green"></span> Live
         </span>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
 # ---------------------------------------------------------------------------
@@ -617,7 +626,7 @@ else:
 # Top Platform Status Bar (Header)
 # ---------------------------------------------------------------------------
 data_snapshot_str = "Live OpenAlex Query" if is_live_mode else "Data Snapshot: 2018–2024"
-st.markdown(f"""
+render_html(f"""
 <div class="top-platform-bar">
     <div class="platform-title-group">
         <div class="platform-logo-icon">TS</div>
@@ -631,7 +640,7 @@ st.markdown(f"""
         <span style="background: #f1f5f9; padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 500;">FastAPI v0.111 · 200 OK</span>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
 
 # ===========================================================================
@@ -650,7 +659,7 @@ if nav_page == "Overview":
             f'<span class="domain-query-tag">Query: {current_tech} (Baseline Domain)</span>'
             f'<span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 9999px; padding: 0.2rem 0.6rem; font-size: 0.72rem; font-weight: 700;">AI & NLP Track</span>'
         )
-        st.markdown(f"""
+        render_html(f"""
         <div class="overview-header" style="margin-bottom: 0.25rem;">
             <div class="overview-title-group">
                 <h1>
@@ -664,10 +673,10 @@ if nav_page == "Overview":
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with col_actions:
-        st.markdown("""
+        render_html("""
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; padding-top: 0.5rem;">
             <div style="font-size: 0.75rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.35rem 0.65rem; color: #334155; font-weight: 500;">
                 2018 – 2024
@@ -676,12 +685,12 @@ if nav_page == "Overview":
                 Export Data
             </button>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # -----------------------------------------------------------------------
     # Prominent Main Page Live Search Bar
     # -----------------------------------------------------------------------
-    st.markdown("""
+    render_html("""
     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
@@ -692,7 +701,7 @@ if nav_page == "Overview":
             </span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     with st.form(key="main_page_search_form", clear_on_submit=False):
         f_col1, f_col2, f_col3 = st.columns([3.6, 1.2, 0.7])
@@ -718,16 +727,26 @@ if nav_page == "Overview":
         st.session_state["search_input_val"] = ""
         st.rerun()
 
+    total_papers = int(current_indicators["paper_count"].sum()) if not current_indicators.empty else 0
+    total_patents = int(current_indicators["patent_count"].sum()) if ("patent_count" in current_indicators.columns and not current_indicators.empty) else 0
+
     # Workflow Banner
-    st.markdown("""
+    if is_live_mode:
+        banner_body = f"<strong>Live OpenAlex Ingestion Active:</strong> Synthesized <strong>{total_papers:,} real scientific records</strong> for <strong>&ldquo;{current_tech}&rdquo;</strong>. Dynamic <strong>TF-IDF + KMeans</strong>, <strong>dynamic ML forecasting</strong>, and <strong>Patent Gap Analysis</strong>."
+        banner_badge = f"🟢 Live OpenAlex Records · 0% Mock · {total_papers:,} Works Modeled"
+    else:
+        banner_body = "<strong>AI Pipeline Architecture:</strong> Synthesizing scientific literature and intellectual property into unified feature vectors. Powered by <strong>unsupervised TF-IDF + KMeans clustering</strong>, <strong>predictive ML forecasting</strong>, and <strong>Research–Patent Gap Analysis</strong>."
+        banner_badge = "AI Status: Synchronized · Baseline Domain Mode"
+
+    render_html(f"""
     <div class="workflow-banner">
         <div class="workflow-text">
             <span>⚡</span>
-            <span><strong>AI Pipeline Architecture:</strong> Live ingestion synthesizing scientific literature and intellectual property into unified feature vectors. Powered by <strong>unsupervised TF-IDF + KMeans clustering</strong>, <strong>predictive ML forecasting</strong>, and <strong>Research–Patent Gap Analysis</strong>.</span>
+            <span>{banner_body}</span>
         </div>
-        <div class="workflow-status-badge">AI Status: Synchronized · End-to-End Analytical Pipeline</div>
+        <div class="workflow-status-badge">{banner_badge}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # 4 Metric Cards Row
     m1, m2, m3, m4 = st.columns(4)
@@ -747,7 +766,7 @@ if nav_page == "Overview":
         yoy_pct = 0.0
 
     with m1:
-        st.markdown(f"""
+        render_html(f"""
         <div class="metric-box">
             <div>
                 <div class="metric-header-row">
@@ -759,11 +778,11 @@ if nav_page == "Overview":
             </div>
             <div class="metric-trend-positive">↗ {yoy_pct:+.1f}% YoY record velocity</div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with m2:
         if is_live_mode:
-            st.markdown(f"""
+            render_html(f"""
             <div class="metric-box">
                 <div>
                     <div class="metric-header-row">
@@ -777,9 +796,9 @@ if nav_page == "Overview":
                     <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         else:
-            st.markdown(f"""
+            render_html(f"""
             <div class="metric-box">
                 <div>
                     <div class="metric-header-row">
@@ -791,13 +810,13 @@ if nav_page == "Overview":
                 </div>
                 <div class="metric-trend-positive">↗ +24.1% YoY filings growth</div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     with m3:
         if is_live_mode:
             if live_topics_data["has_topics"]:
                 n_top = len(live_topics_data["topics"])
-                st.markdown(f"""
+                render_html(f"""
                 <div class="metric-box">
                     <div>
                         <div class="metric-header-row">
@@ -809,9 +828,9 @@ if nav_page == "Overview":
                     </div>
                     <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Live TF-IDF semantic discovery</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
             else:
-                st.markdown(f"""
+                render_html(f"""
                 <div class="metric-box">
                     <div>
                         <div class="metric-header-row">
@@ -823,9 +842,9 @@ if nav_page == "Overview":
                     </div>
                     <div style="font-size: 0.72rem; color: #b45309; font-weight: 600; margin-top: 0.4rem;">Safe fallback handling</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
         else:
-            st.markdown("""
+            render_html("""
             <div class="metric-box">
                 <div>
                     <div class="metric-header-row">
@@ -837,10 +856,10 @@ if nav_page == "Overview":
                 </div>
                 <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Unsupervised ML semantic discovery</div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     with m4:
-        st.markdown(f"""
+        render_html(f"""
         <div class="metric-box">
             <div>
                 <div class="metric-header-row">
@@ -852,14 +871,14 @@ if nav_page == "Overview":
             </div>
             <div style="font-size: 0.74rem; color: #4338ca; font-weight: 600; margin-top: 0.4rem;">Explainable ML trend index</div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    render_html("<div style='height: 12px;'></div>")
 
     # =======================================================================
     # SIGNATURE INNOVATION: Research-Patent Gap Analysis Card
     # =======================================================================
-    st.markdown(f"""
+    render_html(f"""
     <div class="content-card" style="border-left: 4px solid #4f46e5; background: #ffffff; padding: 1.1rem 1.4rem; margin-bottom: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -884,7 +903,7 @@ if nav_page == "Overview":
             </a>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # Middle Section: Left (Plotly Dual/Single Line Chart) and Right (Baseline Tech Comparison & Topics)
     col_chart, col_side = st.columns([1.75, 1])
@@ -901,9 +920,9 @@ if nav_page == "Overview":
             '<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> Papers</span><span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span> Patents</span>'
         )
 
-        st.markdown(f"""
-        <div class="content-card" style="margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+        render_html(f"""
+        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="content-card-title" style="margin: 0;">
                     {chart_title}
                 </div>
@@ -911,7 +930,8 @@ if nav_page == "Overview":
                     {legend_tags}
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        </div>
+        """)
 
         chart_data = current_indicators[current_indicators["year"] >= 2018].sort_values("year")
         years = chart_data["year"].tolist()
@@ -973,69 +993,119 @@ if nav_page == "Overview":
             "Normalized time-series indices from OpenAlex API and USPTO archives. Historical records reflect unified schema integration across 2018–2024."
         )
 
-        st.markdown(f"""
-            <div style="font-size: 0.74rem; color: #64748b; padding-top: 0.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                <span><strong>Methodology Note:</strong> {methodology_text}</span>
-                <span style="color: #4f46e5; font-weight: 600; cursor: pointer;">Schema Reference &rsaquo;</span>
-            </div>
+        render_html(f"""
+        <div style="font-size: 0.74rem; color: #64748b; padding: 0.4rem 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span><strong>Methodology Note:</strong> {methodology_text}</span>
+            <span style="color: #4f46e5; font-weight: 600;">OpenAlex Real Ingestion</span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with col_side:
         # Baseline Technology Comparison Box
-        st.markdown("""
-        <div class="content-card" style="margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <div class="content-card-title" style="margin: 0;">Baseline Comparison</div>
-                <span style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Indexed Scores</span>
-            </div>
-            <div class="baseline-item">
-                <div class="baseline-name-group">
-                    <span class="baseline-name">
-                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #4f46e5;"></span>
-                        Generative AI <span style="font-size: 0.68rem; color: #4f46e5; background: #eef2ff; padding: 0.1rem 0.35rem; border-radius: 3px;">baseline</span>
-                    </span>
-                    <span class="baseline-sub">42.8k papers · 16.3k patents</span>
+        if is_live_mode:
+            render_html(f"""
+            <div class="content-card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div class="content-card-title" style="margin: 0;">Baseline Comparison</div>
+                    <span style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Indexed Scores</span>
                 </div>
-                <div class="baseline-score-badge">82.4</div>
-            </div>
-            <div class="baseline-item">
-                <div class="baseline-name-group">
-                    <span class="baseline-name">
-                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
-                        Solid-State Batteries
-                    </span>
-                    <span class="baseline-sub">14.2k papers · 11.6k patents</span>
+                <div class="baseline-item" style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 0.45rem 0.6rem; margin-bottom: 0.5rem;">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name" style="font-weight: 700; color: #3730a3;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #4f46e5;"></span>
+                            {current_tech} <span style="font-size: 0.68rem; color: #ffffff; background: #4f46e5; padding: 0.1rem 0.35rem; border-radius: 3px; font-weight: 600;">Active Live Search</span>
+                        </span>
+                        <span class="baseline-sub" style="color: #4338ca; font-weight: 600;">{total_papers:,} real OpenAlex papers</span>
+                    </div>
+                    <div class="baseline-score-badge" style="color: #ffffff; background: #4f46e5; font-size: 0.85rem; font-weight: 800;">{current_score}</div>
                 </div>
-                <div class="baseline-score-badge" style="color: #059669; background: #ecfdf5;">71.5</div>
-            </div>
-            <div class="baseline-item">
-                <div class="baseline-name-group">
-                    <span class="baseline-name">
-                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7;"></span>
-                        Quantum Computing
-                    </span>
-                    <span class="baseline-sub">19.4k papers · 8.2k patents</span>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #4f46e5;"></span>
+                            Generative AI <span style="font-size: 0.68rem; color: #4f46e5; background: #eef2ff; padding: 0.1rem 0.35rem; border-radius: 3px;">baseline</span>
+                        </span>
+                        <span class="baseline-sub">42.8k papers · 16.3k patents</span>
+                    </div>
+                    <div class="baseline-score-badge">82.4</div>
                 </div>
-                <div class="baseline-score-badge" style="color: #0284c7; background: #f0f9ff;">68.1</div>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
+                            Solid-State Batteries
+                        </span>
+                        <span class="baseline-sub">14.2k papers · 11.6k patents</span>
+                    </div>
+                    <div class="baseline-score-badge" style="color: #059669; background: #ecfdf5;">71.5</div>
+                </div>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7;"></span>
+                            Quantum Computing
+                        </span>
+                        <span class="baseline-sub">19.4k papers · 8.2k patents</span>
+                    </div>
+                    <div class="baseline-score-badge" style="color: #0284c7; background: #f0f9ff;">68.1</div>
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """)
+        else:
+            render_html("""
+            <div class="content-card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div class="content-card-title" style="margin: 0;">Baseline Comparison</div>
+                    <span style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Indexed Scores</span>
+                </div>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #4f46e5;"></span>
+                            Generative AI <span style="font-size: 0.68rem; color: #4f46e5; background: #eef2ff; padding: 0.1rem 0.35rem; border-radius: 3px;">baseline</span>
+                        </span>
+                        <span class="baseline-sub">42.8k papers · 16.3k patents</span>
+                    </div>
+                    <div class="baseline-score-badge">82.4</div>
+                </div>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
+                            Solid-State Batteries
+                        </span>
+                        <span class="baseline-sub">14.2k papers · 11.6k patents</span>
+                    </div>
+                    <div class="baseline-score-badge" style="color: #059669; background: #ecfdf5;">71.5</div>
+                </div>
+                <div class="baseline-item">
+                    <div class="baseline-name-group">
+                        <span class="baseline-name">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7;"></span>
+                            Quantum Computing
+                        </span>
+                        <span class="baseline-sub">19.4k papers · 8.2k patents</span>
+                    </div>
+                    <div class="baseline-score-badge" style="color: #0284c7; background: #f0f9ff;">68.1</div>
+                </div>
+            </div>
+            """)
 
         # Discovered Topic Clusters Box
         if is_live_mode and live_topics_data["has_topics"]:
-            cluster_items_html = ""
+            cluster_items_list = []
             for top in live_topics_data["topics"][:3]:
-                cluster_items_html += f"""
-                <div class="cluster-item">
-                    <div>
-                        <div class="cluster-title">{top['cluster_id']}. {top['theme']}</div>
-                        <div class="cluster-meta">{top['doc_count']} docs · {top['keywords'][:32]}...</div>
-                    </div>
-                    <span class="cluster-score-pill">Live</span>
-                </div>
-                """
-            st.markdown(f"""
+                cluster_items_list.append(
+                    f'<div class="cluster-item">'
+                    f'<div>'
+                    f'<div class="cluster-title">{top["cluster_id"]}. {top["theme"]}</div>'
+                    f'<div class="cluster-meta">{top["doc_count"]} docs · {top["keywords"][:32]}...</div>'
+                    f'</div>'
+                    f'<span class="cluster-score-pill">Live</span>'
+                    f'</div>'
+                )
+            cluster_items_html = "".join(cluster_items_list)
+            render_html(f"""
             <div class="content-card" style="margin-bottom: 0;">
                 <div class="content-card-title" style="margin-bottom: 0.5rem;">
                     Discovered Topic Clusters (Live KMeans)
@@ -1045,9 +1115,9 @@ if nav_page == "Overview":
                     Unsupervised groupings via scikit-learn TF-IDF & KMeans on live OpenAlex abstracts.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         elif is_live_mode:
-            st.markdown(f"""
+            render_html(f"""
             <div class="content-card" style="margin-bottom: 0;">
                 <div class="content-card-title" style="margin-bottom: 0.5rem;">
                     Topic Clustering Status
@@ -1059,9 +1129,9 @@ if nav_page == "Overview":
                     See live retrieved paper titles in the table below.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         else:
-            st.markdown("""
+            render_html("""
             <div class="content-card" style="margin-bottom: 0;">
                 <div class="content-card-title" style="margin-bottom: 0.5rem;">
                     Discovered Topic Clusters (TF-IDF & KMeans)
@@ -1091,9 +1161,9 @@ if nav_page == "Overview":
                     Unsupervised groupings via scikit-learn TF-IDF & KMeans.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+    render_html("<div style='height: 16px;'></div>")
 
     # Bottom Table: Ingested Records (Matches the bottom section of the image)
     table_sub_label = (
@@ -1102,9 +1172,9 @@ if nav_page == "Overview":
         "Live Queue: 5 of 42,850 · <span style='color: #059669; font-weight: 600;'>● PostgreSQL Synced</span>"
     )
 
-    st.markdown(f"""
-    <div class="content-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+    render_html(f"""
+    <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="content-card-title" style="margin: 0;">
                 Recent Ingested Records (Streamlit Interactive Preview)
             </div>
@@ -1112,7 +1182,8 @@ if nav_page == "Overview":
                 {table_sub_label}
             </div>
         </div>
-    """, unsafe_allow_html=True)
+    </div>
+    """)
 
     if is_live_mode and live_docs_data:
         records_rows = []
@@ -1178,14 +1249,13 @@ if nav_page == "Overview":
         ])
 
     st.dataframe(display_records_df, use_container_width=True, height=220)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ===========================================================================
 # PAGE 2: TECHNOLOGY TRENDS (Dedicated Page — No endless scroll!)
 # ===========================================================================
 elif nav_page == "Technology Trends":
-    st.markdown(f"""
+    render_html(f"""
     <div class="content-card">
         <h1 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">
             Technology Trend Analytics: {current_tech}
@@ -1194,15 +1264,16 @@ elif nav_page == "Technology Trends":
             Detailed 5-factor momentum evaluation and year-over-year compound growth analytics.
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     c1, c2 = st.columns([1.2, 1])
 
     with c1:
-        st.markdown("""
-        <div class="content-card">
-            <div class="content-card-title">Score Factor Radar Profile</div>
-        """, unsafe_allow_html=True)
+        render_html("""
+        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+            <div class="content-card-title" style="margin: 0;">Score Factor Radar Profile</div>
+        </div>
+        """)
 
         categories = ["Growth Rate", "Consistency", "Acceleration", "Activity Volume", "Citation Signal"]
         vals = [
@@ -1234,10 +1305,9 @@ elif nav_page == "Technology Trends":
             ),
         )
         st.plotly_chart(fig_radar, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with c2:
-        st.markdown(f"""
+        render_html(f"""
         <div class="content-card">
             <div class="content-card-title">Factor Weight & Contribution</div>
             <div style="font-size: 0.8rem; color: #475569; line-height: 1.6;">
@@ -1279,13 +1349,14 @@ elif nav_page == "Technology Trends":
                 Final Composite Momentum Index: {current_score_meta['score']} / 100 ({current_score_meta['label']})
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # YoY Velocity Section
-    st.markdown("""
-    <div class="content-card">
-        <div class="content-card-title">Year-over-Year Velocity (%) Comparison</div>
-    """, unsafe_allow_html=True)
+    render_html("""
+    <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+        <div class="content-card-title" style="margin: 0;">Year-over-Year Velocity (%) Comparison</div>
+    </div>
+    """)
 
     if is_live_mode:
         yoy_rows = []
@@ -1333,14 +1404,12 @@ elif nav_page == "Technology Trends":
             fig_h.update_layout(height=200, margin=dict(l=10, r=10, t=10, b=10))
             st.plotly_chart(fig_h, use_container_width=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
 # ===========================================================================
 # PAGE 3: TOPIC EXPLORER (Dedicated Page)
 # ===========================================================================
 elif nav_page == "Topic Explorer":
-    st.markdown(f"""
+    render_html(f"""
     <div class="content-card">
         <h1 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">
             NLP Topic Discovery & Semantic Clustering: {current_tech}
@@ -1349,14 +1418,15 @@ elif nav_page == "Topic Explorer":
             Unsupervised topic extraction via Scikit-Learn TF-IDF vectorization and KMeans clustering on real paper abstracts.
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     if is_live_mode:
         if live_topics_data["has_topics"]:
-            st.markdown(f"""
-            <div class="content-card">
-                <div class="content-card-title">Live Discovered Topic Clusters (k={live_topics_data['k']})</div>
-            """, unsafe_allow_html=True)
+            render_html(f"""
+            <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+                <div class="content-card-title" style="margin: 0;">Live Discovered Topic Clusters (k={live_topics_data['k']})</div>
+            </div>
+            """)
 
             live_topic_rows = []
             for t in live_topics_data["topics"]:
@@ -1368,9 +1438,8 @@ elif nav_page == "Topic Explorer":
                     "Algorithm": "TF-IDF + KMeans",
                 })
             st.dataframe(pd.DataFrame(live_topic_rows), use_container_width=True, height=240)
-            st.markdown("</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"""
+            render_html(f"""
             <div class="content-card">
                 <div class="content-card-title">Topic Extraction Notice</div>
                 <div style="padding: 1rem 1.25rem; background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; font-size: 0.85rem; color: #854d0e;">
@@ -1380,12 +1449,13 @@ elif nav_page == "Topic Explorer":
                     </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
     else:
-        st.markdown("""
-        <div class="content-card">
-            <div class="content-card-title">Discovered Literature Topic Clusters (k=12)</div>
-        """, unsafe_allow_html=True)
+        render_html("""
+        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+            <div class="content-card-title" style="margin: 0;">Discovered Literature Topic Clusters (k=12)</div>
+        </div>
+        """)
 
         topic_df = pd.DataFrame([
             {"Cluster ID": 1, "Dominant Theme": "LLM Alignment, DPO & RLHF", "Top Keyterms": "alignment, direct preference, reward model, human feedback", "Document Count": 8420, "Coherence": 0.52},
@@ -1397,14 +1467,13 @@ elif nav_page == "Topic Explorer":
         ])
 
         st.dataframe(topic_df, use_container_width=True, height=260)
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ===========================================================================
 # PAGE 4: FORECASTING (Dedicated Page)
 # ===========================================================================
 elif nav_page == "Forecasting":
-    st.markdown(f"""
+    render_html(f"""
     <div class="content-card">
         <h1 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">
             Predictive Forecast Models (Dynamic Horizons): {current_tech}
@@ -1414,15 +1483,16 @@ elif nav_page == "Forecasting":
             <strong>Notice:</strong> Projections are empirical extrapolations for technology scoping, not guaranteed outcomes.
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     fc_col1, fc_col2 = st.columns(2)
 
     with fc_col1:
-        st.markdown("""
-        <div class="content-card">
-            <div class="content-card-title">Research Publication Trajectory Forecast</div>
-        """, unsafe_allow_html=True)
+        render_html("""
+        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+            <div class="content-card-title" style="margin: 0;">Research Publication Trajectory Forecast</div>
+        </div>
+        """)
 
         h_data = current_indicators.sort_values("year")
         fig_f1 = go.Figure()
@@ -1493,17 +1563,17 @@ elif nav_page == "Forecasting":
             legend=dict(orientation="h", y=1.05),
         )
         st.plotly_chart(fig_f1, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with fc_col2:
-        st.markdown("""
-        <div class="content-card">
-            <div class="content-card-title">Patent Trajectory & IP Status</div>
-        """, unsafe_allow_html=True)
+        render_html("""
+        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
+            <div class="content-card-title" style="margin: 0;">Patent Trajectory & IP Status</div>
+        </div>
+        """)
 
         if is_live_mode:
-            st.markdown(f"""
-            <div style="padding: 1.5rem 1rem; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 1rem;">
+            render_html(f"""
+            <div style="padding: 1.5rem 1rem; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 0.5rem;">
                 <div style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">
                     Patent Trajectory API Ingestion
                 </div>
@@ -1514,7 +1584,7 @@ elif nav_page == "Forecasting":
                     Inspect &ldquo;{current_tech}&rdquo; on Google Patents ↗
                 </a>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         else:
             fig_f2 = go.Figure()
             fig_f2.add_trace(go.Scatter(
@@ -1547,10 +1617,8 @@ elif nav_page == "Forecasting":
             )
             st.plotly_chart(fig_f2, use_container_width=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     # Error Metrics Table
-    st.markdown("""
+    render_html("""
     <div class="content-card">
         <div class="content-card-title">Model Evaluation & Validation Error Metrics</div>
         <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse; margin-top: 0.5rem;">
@@ -1596,4 +1664,4 @@ elif nav_page == "Forecasting":
             </tr>
         </table>
     </div>
-    """, unsafe_allow_html=True)
+    """)
