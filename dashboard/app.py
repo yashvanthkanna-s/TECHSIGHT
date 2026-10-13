@@ -678,6 +678,46 @@ if nav_page == "Overview":
         </div>
         """, unsafe_allow_html=True)
 
+    # -----------------------------------------------------------------------
+    # Prominent Main Page Live Search Bar
+    # -----------------------------------------------------------------------
+    st.markdown("""
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+                <span>🔍</span> <span>Explore Any Emerging Technology (Live OpenAlex Ingestion)</span>
+            </div>
+            <span style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                Live Scientific Corpus · Press Enter ↵ to Search
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form(key="main_page_search_form", clear_on_submit=False):
+        f_col1, f_col2, f_col3 = st.columns([3.6, 1.2, 0.7])
+        with f_col1:
+            form_query_val = st.text_input(
+                "Search Technology",
+                value=st.session_state.get("search_input_val", ""),
+                placeholder="Type any technology: e.g. Graphene, CRISPR, Nuclear Fusion, Quantum Computing...",
+                label_visibility="collapsed",
+            )
+        with f_col2:
+            form_submitted = st.form_submit_button("Search OpenAlex ↵", type="primary", use_container_width=True)
+        with f_col3:
+            reset_form_submitted = st.form_submit_button("Reset", use_container_width=True)
+
+    if form_submitted and form_query_val.strip():
+        st.session_state["active_live_query"] = form_query_val.strip()
+        st.session_state["search_input_val"] = form_query_val.strip()
+        st.rerun()
+
+    if reset_form_submitted:
+        st.session_state["active_live_query"] = None
+        st.session_state["search_input_val"] = ""
+        st.rerun()
+
     # Workflow Banner
     st.markdown("""
     <div class="workflow-banner">
