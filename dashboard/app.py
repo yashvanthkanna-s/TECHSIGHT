@@ -572,6 +572,14 @@ else:
             indicators["technology_name"] == "Generative AI"
         ].sort_values("year")
 
+    current_indicators = current_indicators.copy().reset_index(drop=True)
+    if "growth_pct" not in current_indicators.columns:
+        current_indicators["growth_pct"] = 0.0
+        for i in range(1, len(current_indicators)):
+            prev = max(float(current_indicators.loc[i - 1, "paper_count"]), 1.0)
+            curr = float(current_indicators.loc[i, "paper_count"])
+            current_indicators.loc[i, "growth_pct"] = round(((curr - prev) / prev) * 100, 1)
+
     current_score_row = scores[
         scores["technology_name"].str.lower() == current_tech.lower().replace("-", " ")
     ]
@@ -685,9 +693,17 @@ if nav_page == "Overview":
     m1, m2, m3, m4 = st.columns(4)
 
     total_papers = int(current_indicators["paper_count"].sum()) if not current_indicators.empty else 0
-    total_patents = int(current_indicators["patent_count"].sum()) if not current_indicators.empty else 0
-
-    yoy_pct = current_indicators["growth_pct"].iloc[-1] if not current_indicators.empty else 0.0
+    if not current_indicators.empty:
+        if "growth_pct" in current_indicators.columns:
+            yoy_pct = float(current_indicators["growth_pct"].iloc[-1])
+        elif len(current_indicators) >= 2:
+            prev = max(float(current_indicators["paper_count"].iloc[-2]), 1.0)
+            curr = float(current_indicators["paper_count"].iloc[-1])
+            yoy_pct = round(((curr - prev) / prev) * 100, 1)
+        else:
+            yoy_pct = 0.0
+    else:
+        yoy_pct = 0.0
 
     with m1:
         st.markdown(f"""
@@ -1234,7 +1250,7 @@ elif nav_page == "Technology Trends":
         yoy_rows = []
         for i in range(1, len(current_indicators)):
             y = str(current_indicators.iloc[i]["year"])
-            g = current_indicators.iloc[i]["growth_pct"]
+            g = float(current_indicators.iloc[i].get("growth_pct", 0.0))
             yoy_rows.append({"Technology": current_tech, "Year": y, "Growth (%)": g})
         if yoy_rows:
             g_df = pd.DataFrame(yoy_rows)
