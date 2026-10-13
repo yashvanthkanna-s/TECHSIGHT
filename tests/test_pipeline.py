@@ -122,5 +122,52 @@ class TestForecasting:
         assert metrics["MAE"] > 0
 
 
+class TestLiveSearch:
+    """Tests for live search, topic discovery safety, and gap analysis."""
+
+    def test_discover_live_topics_small_dataset(self):
+        from analytics.live_search import discover_live_topics
+        # Empty docs
+        res_empty = discover_live_topics([])
+        assert res_empty["has_topics"] is False
+
+        # Too few docs
+        res_few = discover_live_topics([{"text": "Short paper title and abstract text."}])
+        assert res_few["has_topics"] is False
+        assert "Insufficient" in res_few["reason"]
+
+    def test_calculate_live_trend_score_and_forecast(self):
+        from analytics.live_search import calculate_live_trend_score, generate_live_forecast
+        df_y = pd.DataFrame({
+            "year": [2020, 2021, 2022, 2023, 2024],
+            "paper_count": [100, 150, 220, 310, 430],
+            "growth_pct": [0.0, 50.0, 46.7, 40.9, 38.7],
+        })
+        score = calculate_live_trend_score(df_y)
+        assert 0 <= score["score"] <= 100
+        assert score["label"] in ["Emerging", "Growing", "Stable", "Declining"]
+
+        fc = generate_live_forecast(df_y, horizon=3)
+        assert len(fc) == 3
+        assert list(fc["year"]) == [2025, 2026, 2027]
+        assert all(fc["predicted_value"] > 0)
+        assert all(fc["upper_bound"] >= fc["predicted_value"])
+        assert all(fc["lower_bound"] <= fc["predicted_value"])
+
+    def test_analyze_research_patent_gap(self):
+        from analytics.live_search import analyze_research_patent_gap
+        df_y = pd.DataFrame({
+            "year": [2020, 2021, 2022, 2023, 2024],
+            "paper_count": [100, 200, 400, 800, 1600],
+            "growth_pct": [0.0, 100.0, 100.0, 100.0, 100.0],
+        })
+        gap = analyze_research_patent_gap(df_y, "Graphene")
+        assert "status" in gap
+        assert "insight" in gap
+        assert "google_patents_url" in gap
+        assert "https://patents.google.com/?q=Graphene" in gap["google_patents_url"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
