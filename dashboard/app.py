@@ -22,6 +22,7 @@ from mock.mock_data import (
     get_trend_scores, get_forecasts,
 )
 from analytics.live_search import execute_live_search
+from analytics.insights import generate_research_insights
 
 
 def render_html(html_str):
@@ -471,6 +472,97 @@ st.markdown("""
         background-color: #f8fafc !important;
         border-color: #94a3b8 !important;
         color: #0f172a !important;
+    }
+
+    /* Research Insights Component */
+    .insight-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.25rem;
+    }
+
+    .insight-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+        .insight-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .insight-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 1rem 1.125rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .insight-q-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.375rem;
+    }
+
+    .insight-q-num {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #2563eb;
+        letter-spacing: -0.01em;
+    }
+
+    .insight-headline {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.35rem;
+        line-height: 1.3;
+    }
+
+    .insight-body {
+        font-size: 0.8125rem;
+        color: #334155;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+
+    .insight-suggest {
+        font-size: 0.75rem;
+        color: #475569;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 0.5rem 0.625rem;
+        line-height: 1.45;
+        margin-top: 0.375rem;
+    }
+
+    .insight-suggest-label {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.15rem;
+    }
+
+    .guardrail-callout {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #64748b;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        font-size: 0.75rem;
+        color: #475569;
+        line-height: 1.5;
     }
 
     /* Sidebar Styling */
@@ -1172,6 +1264,130 @@ if nav_page == "Overview":
                 </div>
             </div>
             """)
+
+    render_html("<div style='height: 16px;'></div>")
+
+    # =======================================================================
+    # RESEARCH INSIGHTS (Answers the 4 Core Intelligence Questions)
+    # =======================================================================
+    sample_for_insights = live_docs_data if is_live_mode else [
+        {"id": "OA-W43891024", "title": "Direct Preference Optimization: Your Language Model Is Secretly a Reward Model", "year": 2023, "citations": 1420, "doi": "https://doi.org/10.48550/arXiv.2305.18290"},
+        {"id": "OA-W43219082", "title": "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning", "year": 2023, "citations": 980, "doi": "https://doi.org/10.48550/arXiv.2307.08691"},
+        {"id": "OA-W43105991", "title": "LoRA: Low-Rank Adaptation of Large Language Models", "year": 2022, "citations": 3200, "doi": "https://doi.org/10.48550/arXiv.2106.09685"},
+    ]
+
+    insights = generate_research_insights(
+        tech_name=current_tech,
+        yearly_df=current_indicators,
+        topics_data=live_topics_data if is_live_mode else {"has_topics": True, "topics": []},
+        sample_docs=sample_for_insights,
+        forecast_df=live_forecast_data if is_live_mode else pd.DataFrame(),
+        gap_data=gap_data,
+        is_live_mode=is_live_mode,
+    )
+
+    wh = insights["what_happened"]
+    st_out = insights["which_areas_stand_out"]
+    fc_in = insights["what_might_happen_next"]
+    exp_in = insights["what_to_explore_next"]
+
+    rec_papers_html = "".join([
+        f'<li style="margin-bottom: 0.35rem;">'
+        f'<a href="{p["url"]}" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: none;">{p["title"]}</a> '
+        f'<span style="color: #64748b; font-size: 0.71875rem;">({p["year"]} · {p["citations"]:,} citations)</span>'
+        f'</li>'
+        for p in exp_in["recommended_papers"]
+    ])
+
+    render_html(f"""
+    <div class="insight-card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" style="font-size: 0.9375rem;">Research Insights: {current_tech}</div>
+                <div class="card-meta" style="margin-top: 0.15rem;">Objective analytical synthesis grounded in verified retrieved literature and patent registers</div>
+            </div>
+            <span class="status-badge status-badge-blue">Data-Grounded</span>
+        </div>
+
+        <div class="insight-grid">
+            <!-- 1. What happened? -->
+            <div class="insight-box">
+                <div>
+                    <div class="insight-q-label">
+                        <span class="insight-q-num">1. What happened?</span>
+                        <span class="metric-tag">{wh['status'].replace('_', ' ').title()}</span>
+                    </div>
+                    <div class="insight-headline">{wh['headline']}</div>
+                    <div class="insight-body">{wh['detail']}</div>
+                </div>
+                <div class="insight-suggest">
+                    <div class="insight-suggest-label">What this suggests</div>
+                    <div>{wh['interpretation']}</div>
+                </div>
+            </div>
+
+            <!-- 2. Which areas stand out? -->
+            <div class="insight-box">
+                <div>
+                    <div class="insight-q-label">
+                        <span class="insight-q-num">2. Which areas stand out?</span>
+                        <span class="metric-tag">{st_out['status'].replace('_', ' ').title()}</span>
+                    </div>
+                    <div class="insight-headline">{st_out['headline']}</div>
+                    <div class="insight-body">{st_out['detail']}</div>
+                </div>
+                <div class="insight-suggest">
+                    <div class="insight-suggest-label">Subfield Concentration & Evidence</div>
+                    <div>{st_out['interpretation']}</div>
+                </div>
+            </div>
+
+            <!-- 3. What might happen next? -->
+            <div class="insight-box">
+                <div>
+                    <div class="insight-q-label">
+                        <span class="insight-q-num">3. What might happen next?</span>
+                        <span class="metric-tag">Extrapolation</span>
+                    </div>
+                    <div class="insight-headline">{fc_in['headline']}</div>
+                    <div class="insight-body">{fc_in['detail']}</div>
+                </div>
+                <div class="insight-suggest">
+                    <div class="insight-suggest-label">Forecast Limitations</div>
+                    <div>{fc_in['limitations']}</div>
+                </div>
+            </div>
+
+            <!-- 4. What should I explore next? -->
+            <div class="insight-box">
+                <div>
+                    <div class="insight-q-label">
+                        <span class="insight-q-num">4. What should I explore next?</span>
+                        <span class="metric-tag">Next Steps</span>
+                    </div>
+                    <div class="insight-headline">Examine landmark publications and verified patents</div>
+                    <div class="insight-body">
+                        <div style="font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">Landmark Scientific Works:</div>
+                        <ul style="margin: 0; padding-left: 1.125rem; margin-bottom: 0.625rem;">
+                            {rec_papers_html}
+                        </ul>
+                        <div style="font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">Intellectual Property Actions:</div>
+                        <div>{exp_in['patent_advice']}</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 0.625rem;">
+                    <a href="{exp_in['patent_url']}" target="_blank" class="outbound-link-btn">
+                        Explore Patents on EPO Espacenet ↗
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="guardrail-callout">
+            <strong>Commercial Translation Guardrail:</strong> Publication growth alone cannot prove that a technology is commercially viable. Academic literature spikes frequently reflect exploratory research or grant-driven interest. Findings become actionable only when corroborated by paper-level methodological evidence, reproducible results, and reliable European Patent Office (EPO) patent disclosures.
+        </div>
+    </div>
+    """)
 
     render_html("<div style='height: 16px;'></div>")
 

@@ -168,6 +168,53 @@ class TestLiveSearch:
         assert "worldwide.espacenet.com" in gap["epo_espacenet_url"]
 
 
+class TestResearchInsights:
+    """Tests for Research Insights generation."""
+
+    def test_generate_research_insights_normal(self):
+        from analytics.insights import generate_research_insights
+        df_y = pd.DataFrame({
+            "year": [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
+            "paper_count": [1000, 1200, 1500, 1900, 2400, 3100, 4000, 5200, 6800],
+            "patent_count": [200, 250, 310, 400, 520, 680, 890, 1150, 1500],
+        })
+        topics = {
+            "has_topics": True,
+            "k": 2,
+            "topics": [
+                {"cluster_id": 1, "theme": "Hardware Efficiency", "keywords": "tensor, silicon, low-rank", "doc_count": 12},
+                {"cluster_id": 2, "theme": "Algorithm Optimization", "keywords": "gradient, loss, convergence", "doc_count": 8},
+            ],
+        }
+        sample_docs = [
+            {"id": "W123", "title": "Scalable Tensor Architectures", "citations": 450, "year": 2024, "doi": "https://doi.org/10.123/456"},
+        ]
+        fc = pd.DataFrame({"year": [2027], "predicted_value": [8500], "lower_bound": [7200], "upper_bound": [9800]})
+        gap = {"epo_espacenet_url": "https://worldwide.espacenet.com/patent/search?q=AI", "status": "Active Translation Phase"}
+
+        insights = generate_research_insights("AI", df_y, topics, sample_docs, fc, gap, is_live_mode=True)
+        assert "what_happened" in insights
+        assert "which_areas_stand_out" in insights
+        assert "what_might_happen_next" in insights
+        assert "what_to_explore_next" in insights
+
+        assert insights["what_happened"]["status"] == "normal"
+        assert insights["what_happened"]["pct_change"] > 0
+        assert insights["which_areas_stand_out"]["status"] == "clustered"
+        assert len(insights["which_areas_stand_out"]["clusters"]) == 2
+        assert insights["what_might_happen_next"]["status"] == "modeled"
+        assert len(insights["what_to_explore_next"]["recommended_papers"]) > 0
+
+    def test_generate_research_insights_sparse_data(self):
+        from analytics.insights import generate_research_insights
+        df_y = pd.DataFrame({"year": [2022, 2023], "paper_count": [2, 3]})
+        insights = generate_research_insights("RareTech", df_y, {"has_topics": False}, [], pd.DataFrame(), {}, is_live_mode=True)
+        assert insights["what_happened"]["status"] == "low_sample"
+        assert "sparse" in insights["what_happened"]["headline"].lower() or "insufficient" in insights["what_happened"]["headline"].lower()
+        assert insights["which_areas_stand_out"]["status"] == "insufficient_abstracts"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
 
