@@ -320,17 +320,18 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
     """
     Research-Patent Gap Analysis:
     Compares scholarly publication velocity with intellectual property filings.
-    Provides direct Google Patents verification link and EPO OPS status.
+    Provides direct official EPO Espacenet verification link and EPO OPS status.
     """
-    encoded_query = urllib.parse.quote_plus(query)
-    google_patents_url = f"https://patents.google.com/?q={encoded_query}"
+    encoded_query = urllib.parse.quote(query)
+    epo_espacenet_url = f"https://worldwide.espacenet.com/patent/search?q={encoded_query}"
 
     if yearly_papers_df.empty:
         return {
             "status": "Awaiting Data",
             "ratio_label": "N/A",
             "insight": "Run search to calculate gap analysis.",
-            "google_patents_url": google_patents_url,
+            "epo_espacenet_url": epo_espacenet_url,
+            "google_patents_url": epo_espacenet_url,
             "epo_active": epo_active,
         }
 
@@ -390,12 +391,13 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
         "insight": gap_insight,
         "total_papers": total_papers,
         "total_patents": total_patents,
-        "google_patents_url": google_patents_url,
+        "epo_espacenet_url": epo_espacenet_url,
+        "google_patents_url": epo_espacenet_url,
         "epo_active": epo_active,
         "epo_registration_url": "https://developers.epo.org/",
         "disclaimer": (
             "Research analysis is derived from 100% genuine live OpenAlex scholarly data. "
-            "Patent disclosures can be directly explored on Google Patents or ingested via official EPO OPS."
+            "Patent records can be verified via official European Patent Office (EPO) Espacenet."
         ),
     }
 
@@ -409,7 +411,7 @@ def execute_live_search(query):
     4. Runs unsupervised TF-IDF + KMeans clustering on real abstracts.
     5. Calculates multi-factor trend momentum score (CAGR, consistency, acceleration, volume, citations).
     6. Dynamically forecasts the next 3 years (2027–2029) with 80% confidence bounds.
-    7. Generates direct Google Patents exploration link for official IP filings.
+    7. Generates official EPO Espacenet exploration link for patent inspection.
     """
     yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2026)
     sample_docs = fetch_live_sample_documents(query, limit=25)

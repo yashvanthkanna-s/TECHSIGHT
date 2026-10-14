@@ -186,8 +186,8 @@ def generate_documents(max_per_domain=200):
                     "classifications": domain.replace("_", " "),
                     "authors": _random_authors(),
                     "organizations": random.choice(ORGS),
-                    "citation_count": None,  # USPTO citations often unavailable
-                    "url": f"https://patents.google.com/patent/US{random.randint(10000000, 99999999)}",
+                    "citation_count": None,
+                    "url": f"https://worldwide.espacenet.com/patent/search/family/EP{random.randint(1000000, 9999999)}",
                     "domain": domain,
                     "ingested_at": datetime(year, random.randint(1, 12), random.randint(1, 28)),
                 })

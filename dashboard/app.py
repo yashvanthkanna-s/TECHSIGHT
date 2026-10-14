@@ -617,7 +617,8 @@ else:
         "status": "Active Translation Phase",
         "ratio_label": "Balanced R&D / IP Pipeline",
         "insight": f"High scholarly publication volume accompanied by established patent filings across leading industry assignees.",
-        "google_patents_url": f"https://patents.google.com/?q={current_tech.replace(' ', '+')}",
+        "epo_espacenet_url": f"https://worldwide.espacenet.com/patent/search?q={current_tech.replace(' ', '+')}",
+        "google_patents_url": f"https://worldwide.espacenet.com/patent/search?q={current_tech.replace(' ', '+')}",
         "disclaimer": "Research–Patent Gap is an analytical indicator for technology intelligence exploration, not a guarantee of commercial opportunity.",
     }
     live_topics_data = {"has_topics": False, "topics": []}
@@ -800,7 +801,7 @@ if nav_page == "Overview":
                         <div class="metric-sub-detail">Worldwide patents registered (EPO DocDB)</div>
                     </div>
                     <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
-                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
+                        <a href="{gap_data.get('epo_espacenet_url', gap_data.get('google_patents_url', ''))}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} on EPO Espacenet ↗</a>
                     </div>
                 </div>
                 """)
@@ -816,7 +817,7 @@ if nav_page == "Overview":
                         <div class="metric-sub-detail">European Patent Office Worldwide Feed</div>
                     </div>
                     <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
-                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none; font-weight: 700;">Inspect Patents on Google Patents ↗</a>
+                        <a href="{gap_data.get('epo_espacenet_url', gap_data.get('google_patents_url', ''))}" target="_blank" style="color: #0284c7; text-decoration: none; font-weight: 700;">Explore EPO Espacenet ↗</a>
                     </div>
                 </div>
                 """)
@@ -921,8 +922,8 @@ if nav_page == "Overview":
             <div>
                 <strong>Indicator Note:</strong> The Research–Patent Gap is an exploratory intelligence indicator comparing scholarly momentum with IP filings, not a guarantee of commercial opportunity.
             </div>
-            <a href="{gap_data['google_patents_url']}" target="_blank" style="background: #4f46e5; color: white; padding: 0.35rem 0.85rem; border-radius: 6px; text-decoration: none; font-weight: 600; white-space: nowrap; margin-left: 1rem;">
-                Inspect Patents on Google Patents ↗
+            <a href="{gap_data.get('epo_espacenet_url', gap_data.get('google_patents_url', ''))}" target="_blank" style="background: #4f46e5; color: white; padding: 0.35rem 0.85rem; border-radius: 6px; text-decoration: none; font-weight: 600; white-space: nowrap; margin-left: 1rem;">
+                Inspect on EPO Espacenet ↗
             </a>
         </div>
     </div>
@@ -1015,9 +1016,9 @@ if nav_page == "Overview":
         st.plotly_chart(fig_dual, use_container_width=True)
 
         methodology_text = (
-            "Scholarly records dynamically aggregated via OpenAlex API group_by endpoint. For registered patent volumes, inspect live filings on Google Patents or configure official EPO OPS API credentials."
+            "Scholarly records dynamically aggregated via OpenAlex API group_by endpoint. For registered patent volumes, inspect live filings on official EPO Espacenet or configure official EPO OPS API credentials."
             if is_live_mode else
-            "Normalized time-series indices from OpenAlex API and USPTO archives. Historical records reflect unified schema integration across 2018–2026."
+            "Normalized time-series indices from OpenAlex API and EPO archives. Historical records reflect unified schema integration across 2018–2026."
         )
 
         render_html(f"""
@@ -1600,15 +1601,15 @@ elif nav_page == "Forecasting":
                     Official Patent & IP Landscape: {current_tech}
                 </div>
                 <div style="font-size: 0.82rem; color: #475569; line-height: 1.6; margin-bottom: 1rem;">
-                    TECHSIGHT operates exclusively on <strong>100% genuine OpenAlex live scientific data</strong> without synthetic patent fabrication.
-                    Official worldwide patent disclosures, granted utility claims, and assignee portfolios (e.g. Google, Siemens, Samsung, Medtronic) are indexed in real time directly on Google Patents.
+                    TECHSIGHT operates directly on <strong>100% genuine OpenAlex live scientific data</strong> and the <strong>European Patent Office (EPO OPS)</strong> worldwide database.
+                    Official worldwide patent disclosures, granted utility claims, and assignee portfolios are accessible directly on official European Patent Office (EPO) Espacenet.
                 </div>
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
                     <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Direct Query Target</div>
                     <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-top: 0.15rem;">&ldquo;{current_tech}&rdquo;</div>
                 </div>
-                <a href="{gap_data['google_patents_url']}" target="_blank" style="display: inline-block; background: #0284c7; color: white; padding: 0.5rem 1.1rem; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 700;">
-                    Inspect Official Patents on Google Patents ↗
+                <a href="{gap_data.get('epo_espacenet_url', gap_data.get('google_patents_url', ''))}" target="_blank" style="display: inline-block; background: #0284c7; color: white; padding: 0.5rem 1.1rem; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 700;">
+                    Inspect Official Patents on EPO Espacenet ↗
                 </a>
             </div>
             """)

@@ -164,8 +164,8 @@ class TestLiveSearch:
         gap = analyze_research_patent_gap(df_y, "Graphene")
         assert "status" in gap
         assert "insight" in gap
-        assert "google_patents_url" in gap
-        assert "https://patents.google.com/?q=Graphene" in gap["google_patents_url"]
+        assert "epo_espacenet_url" in gap
+        assert "worldwide.espacenet.com" in gap["epo_espacenet_url"]
 
 
 if __name__ == "__main__":
