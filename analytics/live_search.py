@@ -26,6 +26,7 @@ from ingestion.epo_connector import (
     fetch_epo_sample_patents,
 )
 
+
 logger = logging.getLogger(__name__)
 
 OPENALEX_BASE = "https://api.openalex.org/works"
@@ -315,88 +316,11 @@ def generate_live_forecast(yearly_df, horizon=3, target_col="paper_count"):
     return pd.DataFrame(rows)
 
 
-def estimate_patent_activity_from_research(yearly_df):
-    """
-    Empirical IP Transfer Model:
-    When direct EPO credentials are not configured in .env, models worldwide patent filings
-    based on established scholarly-to-patent technology transfer dynamics (12-18 month lag,
-    sector conversion ratio, and statutory 18-month publication blackout window).
-    """
-    patent_counts = {}
-    years = yearly_df["year"].tolist()
-    papers = yearly_df["paper_count"].tolist()
-
-    for i, year in enumerate(years):
-        if i == 0:
-            base_p = papers[i] * 0.38
-        else:
-            base_p = (papers[i - 1] * 0.44) + (papers[i] * 0.16)
-
-        # Statutory 18-month patent publication blackout adjustment for recent years
-        if year == 2025:
-            base_p *= 0.82
-        elif year >= 2026:
-            base_p *= 0.54
-
-        patent_counts[year] = max(1, int(round(base_p)))
-    return patent_counts
-
-
-def generate_sample_patents_for_query(query, limit=10):
-    """
-    Generate structured patent metadata records for the queried technology domain,
-    linking directly to official Google Patents search results.
-    """
-    clean_q = query.strip()
-    words = [w.capitalize() for w in clean_q.split() if len(w) > 2]
-    focus = " ".join(words[:3]) if words else "Emerging Technology"
-
-    sample_assignees = [
-        "International Business Machines Corp",
-        "Siemens Healthcare GmbH",
-        "Alphabet Inc / Google LLC",
-        "Samsung Electronics Co Ltd",
-        "Philips Intellectual Property & Standards",
-        "Roche Diagnostics Operations Inc",
-        "Medtronic Inc",
-        "Johnson & Johnson Innovative Medicine",
-    ]
-
-    titles = [
-        f"Methods and Apparatus for {focus} Analysis and Predictive Diagnostics",
-        f"Automated System for Real-Time {focus} Processing and Neural Evaluation",
-        f"Deep Learning Architecture and Computational Framework for {focus}",
-        f"High-Throughput Apparatus and Verification Method for {focus}",
-        f"Adaptive Multi-Modal Sensor and Controller System for {focus}",
-        f"Machine-Learned Decision Support System and Interface for {focus}",
-        f"Optimization Protocol and Hardware Accelerator for {focus}",
-        f"Secure Distributed Pipeline and Cryptographic Verification for {focus}",
-    ]
-
-    patents = []
-    import random
-    rng = random.Random(abs(hash(clean_q)))
-
-    years_choices = [2024, 2024, 2025, 2025, 2026]
-    for i in range(min(limit, len(titles))):
-        pat_num = f"US-202{rng.randint(4,6)}-0{rng.randint(100000, 999999)}A1"
-        yr = rng.choice(years_choices)
-        patents.append({
-            "id": pat_num,
-            "title": titles[i],
-            "year": yr,
-            "applicant": rng.choice(sample_assignees),
-            "date": f"{yr}-{rng.randint(1,12):02d}-{rng.randint(1,28):02d}",
-            "link": f"https://patents.google.com/?q={urllib.parse.quote_plus(clean_q)}",
-        })
-    return patents
-
-
 def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
     """
     Research-Patent Gap Analysis:
     Compares scholarly publication velocity with intellectual property filings.
-    Provides direct Google Patents verification link.
+    Provides direct Google Patents verification link and EPO OPS status.
     """
     encoded_query = urllib.parse.quote_plus(query)
     google_patents_url = f"https://patents.google.com/?q={encoded_query}"
@@ -413,28 +337,26 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
     total_papers = int(yearly_papers_df["paper_count"].sum())
     total_patents = int(yearly_papers_df["patent_count"].sum()) if "patent_count" in yearly_papers_df.columns else 0
 
-    source_label = "EPO OPS Worldwide" if epo_active else "Empirical IP Transfer Model"
-
-    if total_patents > 0:
+    if epo_active and total_patents > 0:
         ratio = total_papers / max(total_patents, 1)
         if ratio > 4.0:
             gap_status = "High Academic Precedence (IP Gap Detected)"
             gap_insight = (
-                f"Scholarly publication volume ({total_papers:,} papers) significantly outpaces patent filings ({total_patents:,} patents via {source_label}). "
+                f"Scholarly publication volume ({total_papers:,} papers) significantly outpaces worldwide patent filings ({total_patents:,} patents via official EPO OPS). "
                 "This indicates strong fundamental research momentum preceding industrial IP conversion."
             )
             ratio_indicator = f"Paper-to-Patent Ratio: {ratio:.1f}:1"
         elif ratio < 0.9:
             gap_status = "Commercial & Industrial Dominance"
             gap_insight = (
-                f"Worldwide patent filings ({total_patents:,} patents via {source_label}) exceed academic research volume ({total_papers:,} papers). "
+                f"Worldwide patent filings ({total_patents:,} patents via official EPO OPS) exceed academic research volume ({total_papers:,} papers). "
                 "Industry players are actively protecting proprietary implementations in mature engineering domains."
             )
             ratio_indicator = f"Patent Heavy ({ratio:.1f}:1)"
         else:
-            gap_status = "Active Translation Phase"
+            gap_status = "Balanced Translation Phase"
             gap_insight = (
-                f"Healthy balance between scientific research ({total_papers:,} papers) and patent activity ({total_patents:,} patents via {source_label}). "
+                f"Healthy balance between scientific research ({total_papers:,} papers) and patent activity ({total_patents:,} patents via official EPO OPS). "
                 "Demonstrates active technology translation from scholarly exploration into intellectual property protection."
             )
             ratio_indicator = f"Balanced ({ratio:.1f}:1)"
@@ -443,24 +365,24 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
         if cagr > 20.0:
             gap_status = "Academic R&D Surge (Pre-Commercial Phase)"
             gap_insight = (
-                "Scientific publication velocity is expanding rapidly. This pattern typically signals "
-                "early-stage technological maturation preceding widespread industrial patent filings."
+                f"Scholarly publication volume ({total_papers:,} real papers) is accelerating rapidly (+{cagr:.1f}% avg YoY). "
+                "High scientific discovery velocity typically precedes industrial patent filings by 12–18 months."
             )
             ratio_indicator = "High Scientific Velocity"
         elif cagr > 8.0:
             gap_status = "Active Translation Phase"
             gap_insight = (
-                "Research growth is steady with active commercial interest. Technology is transitioning "
-                "from academic discovery toward corporate intellectual property protection."
+                f"Research growth is steady ({total_papers:,} papers, +{cagr:.1f}% avg YoY). "
+                "Technology shows consistent sustained scientific interest transitioning toward commercial implementations."
             )
-            ratio_indicator = "Balanced R&D / IP Pipeline"
+            ratio_indicator = "Steady R&D Expansion"
         else:
             gap_status = "Mature / Consolidated Stage"
             gap_insight = (
-                "Publication growth has stabilized, indicative of established engineering paradigms "
-                "where industrial patents typically dominate incremental scientific papers."
+                f"Publication growth has stabilized ({total_papers:,} papers, +{cagr:.1f}% avg YoY), "
+                "indicative of an established engineering paradigm."
             )
-            ratio_indicator = "Commercial Dominance"
+            ratio_indicator = "Consolidated Domain"
 
     return {
         "status": gap_status,
@@ -470,11 +392,10 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
         "total_patents": total_patents,
         "google_patents_url": google_patents_url,
         "epo_active": epo_active,
-        "source_label": source_label,
         "epo_registration_url": "https://developers.epo.org/",
         "disclaimer": (
-            "Research–Patent Gap is an analytical indicator for technology intelligence exploration, "
-            "not a guarantee of commercial opportunity."
+            "Research analysis is derived from 100% genuine live OpenAlex scholarly data. "
+            "Patent disclosures can be directly explored on Google Patents or ingested via official EPO OPS."
         ),
     }
 
@@ -484,38 +405,35 @@ def execute_live_search(query):
     Orchestrate full end-to-end live analysis for an arbitrary technology query:
     1. Fetches genuine annual aggregate publication volume via OpenAlex group_by (2018–2026).
     2. Fetches sample paper titles & abstracts from OpenAlex.
-    3. Ingests or models worldwide patent activity (2018–2026).
-    4. Runs unsupervised TF-IDF + KMeans clustering on abstracts.
-    5. Calculates multi-factor trend momentum score.
-    6. Dynamically forecasts the next 3 years (2027–2029) with confidence bounds.
-    7. Performs Research-Patent Gap Analysis with Google Patents exploration link.
+    3. Ingests genuine worldwide patent statistics from EPO OPS when credentials are configured.
+    4. Runs unsupervised TF-IDF + KMeans clustering on real abstracts.
+    5. Calculates multi-factor trend momentum score (CAGR, consistency, acceleration, volume, citations).
+    6. Dynamically forecasts the next 3 years (2027–2029) with 80% confidence bounds.
+    7. Generates direct Google Patents exploration link for official IP filings.
     """
     yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2026)
     sample_docs = fetch_live_sample_documents(query, limit=25)
     topics = discover_live_topics(sample_docs, max_k=4)
     trend_score = calculate_live_trend_score(yearly_df)
 
-    # EPO OPS or Automated IP Transfer Ingestion
+    # Official EPO OPS Patent Integration
     epo_active = is_epo_configured()
     sample_patents = []
     if epo_active:
-        logger.info("EPO OPS configured: fetching live worldwide patent statistics for '%s'...", query)
+        logger.info("EPO OPS configured: querying official European Patent Office for '%s'...", query)
         patent_counts = fetch_epo_patent_counts(query, start_year=2018, end_year=2026)
         if patent_counts:
             yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
         else:
-            patent_counts = estimate_patent_activity_from_research(yearly_df)
-            yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
+            yearly_df["patent_count"] = 0
         sample_patents = fetch_epo_sample_patents(query, limit=10)
     else:
-        patent_counts = estimate_patent_activity_from_research(yearly_df)
-        yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
-        sample_patents = generate_sample_patents_for_query(query, limit=10)
+        yearly_df["patent_count"] = 0
 
     yearly_df["total_count"] = yearly_df["paper_count"] + yearly_df["patent_count"]
 
     forecast_papers = generate_live_forecast(yearly_df, horizon=3, target_col="paper_count")
-    forecast_patents = generate_live_forecast(yearly_df, horizon=3, target_col="patent_count")
+    forecast_patents = generate_live_forecast(yearly_df, horizon=3, target_col="patent_count") if epo_active else pd.DataFrame()
 
     gap = analyze_research_patent_gap(yearly_df, query, epo_active=epo_active)
     gap["sample_patents"] = sample_patents

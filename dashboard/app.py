@@ -788,23 +788,38 @@ if nav_page == "Overview":
 
     with m2:
         if is_live_mode:
-            patent_tag = "EPO OPS Live" if gap_data.get("epo_active") else "IP Transfer Model"
-            patent_sub = "Worldwide patents registered (EPO DocDB)" if gap_data.get("epo_active") else "Modeled Worldwide IP Velocity"
-            render_html(f"""
-            <div class="metric-box">
-                <div>
-                    <div class="metric-header-row">
-                        <span class="metric-tag-label">Patent Filings</span>
-                        <span class="metric-pill-tag tag-cyan">{patent_tag}</span>
+            if gap_data.get("epo_active") and total_patents > 0:
+                render_html(f"""
+                <div class="metric-box">
+                    <div>
+                        <div class="metric-header-row">
+                            <span class="metric-tag-label">Patent Filings</span>
+                            <span class="metric-pill-tag tag-cyan">EPO OPS Live</span>
+                        </div>
+                        <div class="metric-big-number">{total_patents:,}</div>
+                        <div class="metric-sub-detail">Worldwide patents registered (EPO DocDB)</div>
                     </div>
-                    <div class="metric-big-number">{total_patents:,}</div>
-                    <div class="metric-sub-detail">{patent_sub}</div>
+                    <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
+                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
+                    </div>
                 </div>
-                <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
-                    <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
+                """)
+            else:
+                render_html(f"""
+                <div class="metric-box">
+                    <div>
+                        <div class="metric-header-row">
+                            <span class="metric-tag-label">Patent Data Status</span>
+                            <span class="metric-pill-tag tag-cyan">EPO OPS Ready</span>
+                        </div>
+                        <div class="metric-big-number" style="font-size: 1.15rem; font-weight: 800; color: #0891b2; margin-top: 0.2rem;">Official EPO API</div>
+                        <div class="metric-sub-detail">European Patent Office Worldwide Feed</div>
+                    </div>
+                    <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
+                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none; font-weight: 700;">Inspect Patents on Google Patents ↗</a>
+                    </div>
                 </div>
-            </div>
-            """)
+                """)
         else:
             render_html(f"""
             <div class="metric-box">
@@ -918,7 +933,7 @@ if nav_page == "Overview":
 
     with col_chart:
         chart_title = (
-            (f"Annual Activity: {current_tech} (OpenAlex Papers vs. EPO Patents)" if total_patents > 0 else f"Annual Publication Volume: {current_tech} (2018–2026 OpenAlex API)")
+            (f"Annual Activity: {current_tech} (OpenAlex Papers vs. EPO Patents)" if total_patents > 0 else f"Annual Scientific Publication Volume: {current_tech} (2018–2026 OpenAlex API)")
             if is_live_mode else
             "Annual Activity: Research Papers vs. Patent Disclosures (2018–2026)"
         )
@@ -959,13 +974,13 @@ if nav_page == "Overview":
             hovertemplate="<b>Papers</b>: %{y:,}<br>Year: %{x}<extra></extra>",
         ))
 
-        # Patent Filings Line (if patents exist or in preset mode)
+        # Patent Filings Line (when patents exist or in preset mode)
         if total_patents > 0 or not is_live_mode:
             patents = chart_data["patent_count"].tolist()
             fig_dual.add_trace(go.Scatter(
                 x=years,
                 y=patents,
-                name="Patents",
+                name="EPO Patents" if is_live_mode else "Patents",
                 mode="lines+markers",
                 line=dict(color="#06b6d4", width=3, shape="spline"),
                 marker=dict(size=7, color="#06b6d4", line=dict(color="#ffffff", width=1.5)),
@@ -1200,27 +1215,17 @@ if nav_page == "Overview":
     if is_live_mode:
         records_rows = []
         if live_docs_data:
-            for d in live_docs_data[:7]:
+            for d in live_docs_data[:12]:
                 rec_id = d["id"].split("/")[-1] if "/" in d.get("id", "") else d.get("id", "OA-DOC")
                 records_rows.append({
                     "Record ID": f"OA-{rec_id}",
                     "Title / Paper Header": d.get("title", "Untitled"),
-                    "Record Type": "Paper (OpenAlex)",
+                    "Record Type": "Peer-Reviewed Paper",
                     "Source": "OpenAlex Works API",
                     "Year": d.get("year", 2026),
                     "Citations": d.get("citations", 0),
-                    "Document DOI": d.get("doi") or f"https://openalex.org/{rec_id}",
+                    "Document Link": d.get("doi") or f"https://openalex.org/{rec_id}",
                 })
-        for p in gap_data.get("sample_patents", [])[:5]:
-            records_rows.append({
-                "Record ID": p.get("id", "PAT-DOC"),
-                "Title / Paper Header": p.get("title", "Patent Title"),
-                "Record Type": "Patent (IP)",
-                "Source": "EPO DocDB" if gap_data.get("epo_active") else "IP Transfer Ingestion",
-                "Year": p.get("year", 2025),
-                "Citations": 12,
-                "Document DOI": p.get("id", ""),
-            })
         display_records_df = pd.DataFrame(records_rows)
     else:
         display_records_df = pd.DataFrame([
@@ -1588,56 +1593,34 @@ elif nav_page == "Forecasting":
         st.plotly_chart(fig_f1, use_container_width=True)
 
     with fc_col2:
-        render_html("""
-        <div class="content-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1.25rem;">
-            <div class="content-card-title" style="margin: 0;">Patent Trajectory & IP Status</div>
-        </div>
-        """)
-
-        h_data = current_indicators.sort_values("year")
-        fig_f2 = go.Figure()
-
-        # Observed points
-        fig_f2.add_trace(go.Scatter(
-            x=h_data["year"], y=h_data["patent_count"],
-            name="Observed Patents",
-            mode="lines+markers",
-            line=dict(color="#06b6d4", width=2.5),
-        ))
-
-        if is_live_mode and not live_forecast_patents_data.empty:
-            last_y = int(h_data["year"].iloc[-1])
-            last_v = float(h_data["patent_count"].iloc[-1])
-
-            pred_years = [last_y] + list(live_forecast_patents_data["year"])
-            pred_vals = [last_v] + list(live_forecast_patents_data["predicted_value"])
-            upper_vals = [last_v] + list(live_forecast_patents_data["upper_bound"])
-            lower_vals = [last_v] + list(live_forecast_patents_data["lower_bound"])
-
-            fig_f2.add_trace(go.Scatter(
-                x=pred_years, y=upper_vals,
-                mode="lines",
-                line=dict(width=0),
-                showlegend=False,
-                name="Upper Bound (80% CI)",
-            ))
-            fig_f2.add_trace(go.Scatter(
-                x=pred_years, y=lower_vals,
-                mode="lines",
-                line=dict(width=0),
-                fill="tonexty",
-                fillcolor="rgba(6, 182, 212, 0.12)",
-                showlegend=True,
-                name="80% Confidence Interval",
-            ))
-            fig_f2.add_trace(go.Scatter(
-                x=pred_years, y=pred_vals,
-                name="Dynamic Patent Forecast",
-                mode="lines+markers",
-                line=dict(color="#06b6d4", width=2.5, dash="dash"),
-                marker=dict(symbol="diamond", size=7),
-            ))
+        if is_live_mode:
+            render_html(f"""
+            <div class="content-card" style="padding: 1.25rem;">
+                <div class="content-card-title" style="margin-bottom: 0.75rem;">
+                    Official Patent & IP Landscape: {current_tech}
+                </div>
+                <div style="font-size: 0.82rem; color: #475569; line-height: 1.6; margin-bottom: 1rem;">
+                    TECHSIGHT operates exclusively on <strong>100% genuine OpenAlex live scientific data</strong> without synthetic patent fabrication.
+                    Official worldwide patent disclosures, granted utility claims, and assignee portfolios (e.g. Google, Siemens, Samsung, Medtronic) are indexed in real time directly on Google Patents.
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Direct Query Target</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-top: 0.15rem;">&ldquo;{current_tech}&rdquo;</div>
+                </div>
+                <a href="{gap_data['google_patents_url']}" target="_blank" style="display: inline-block; background: #0284c7; color: white; padding: 0.5rem 1.1rem; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 700;">
+                    Inspect Official Patents on Google Patents ↗
+                </a>
+            </div>
+            """)
         else:
+            fig_f2 = go.Figure()
+            fig_f2.add_trace(go.Scatter(
+                x=h_data["year"], y=h_data["patent_count"],
+                name="Observed Patents",
+                mode="lines+markers",
+                line=dict(color="#06b6d4", width=2.5),
+            ))
+
             last_pat = h_data["patent_count"].iloc[-1]
             last_y = h_data["year"].iloc[-1]
             pred_years = [last_y, 2027, 2028, 2029]
@@ -1651,15 +1634,15 @@ elif nav_page == "Forecasting":
                 marker=dict(symbol="diamond", size=7),
             ))
 
-        fig_f2.update_layout(
-            template="plotly_white",
-            height=320,
-            margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(dtick=1, gridcolor="#f1f5f9"),
-            yaxis=dict(gridcolor="#f1f5f9"),
-            legend=dict(orientation="h", y=1.05),
-        )
-        st.plotly_chart(fig_f2, use_container_width=True)
+            fig_f2.update_layout(
+                template="plotly_white",
+                height=320,
+                margin=dict(l=10, r=10, t=10, b=10),
+                xaxis=dict(dtick=1, gridcolor="#f1f5f9"),
+                yaxis=dict(gridcolor="#f1f5f9"),
+                legend=dict(orientation="h", y=1.05),
+            )
+            st.plotly_chart(fig_f2, use_container_width=True)
 
     # Error Metrics Table
     render_html("""

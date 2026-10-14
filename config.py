@@ -16,7 +16,6 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY", "")
 OPENALEX_EMAIL = os.getenv("OPENALEX_EMAIL", "")  # Polite pool identifier
-USPTO_API_KEY = os.getenv("USPTO_API_KEY", "")
 EPO_CONSUMER_KEY = os.getenv("EPO_CONSUMER_KEY", "")
 EPO_CONSUMER_SECRET = os.getenv("EPO_CONSUMER_SECRET", "")
 
