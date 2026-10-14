@@ -703,32 +703,33 @@ with st.sidebar:
         label_visibility="collapsed",
         key="sidebar_keyword_input",
     )
+    sb_search_clicked = st.button("Search", type="primary", key="sb_btn_search", use_container_width=True)
 
-    col_s1, col_s2 = st.columns([1.2, 1])
-    with col_s1:
-        sb_search_clicked = st.button("Search", type="primary", key="sb_btn_search")
-    with col_s2:
-        sb_reset_clicked = st.button("Reset", key="sb_btn_reset")
-
-    if sb_search_clicked and sb_search_val.strip():
-        st.session_state["active_live_query"] = sb_search_val.strip()
-        st.session_state["search_input_val"] = sb_search_val.strip()
-        st.cache_data.clear()
-        st.rerun()
-
-    if sb_reset_clicked:
-        st.session_state["active_live_query"] = None
-        st.session_state["search_input_val"] = ""
+    if sb_search_clicked:
+        if sb_search_val.strip():
+            st.session_state["active_live_query"] = sb_search_val.strip()
+            st.session_state["search_input_val"] = sb_search_val.strip()
+        else:
+            st.session_state["active_live_query"] = None
+            st.session_state["search_input_val"] = ""
         st.cache_data.clear()
         st.rerun()
 
     if st.session_state["active_live_query"]:
-        render_html(f"""
-        <div style="margin-top: 0.75rem; padding: 0.5rem 0.625rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.75rem; color: #1e40af;">
-            <div style="font-weight: 600;">Active Query:</div>
-            <div>&ldquo;{st.session_state['active_live_query']}&rdquo;</div>
-        </div>
-        """)
+        c_act1, c_act2 = st.columns([2.5, 1])
+        with c_act1:
+            render_html(f"""
+            <div style="margin-top: 0.5rem; padding: 0.4rem 0.5rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.75rem; color: #1e40af;">
+                <span style="font-weight: 600;">Active:</span> &ldquo;{st.session_state['active_live_query']}&rdquo;
+            </div>
+            """)
+        with c_act2:
+            render_html("<div style='height: 8px;'></div>")
+            if st.button("Clear", key="sb_clear_active_btn", use_container_width=True):
+                st.session_state["active_live_query"] = None
+                st.session_state["search_input_val"] = ""
+                st.cache_data.clear()
+                st.rerun()
 
     render_html("<hr style='border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0 1rem 0;'>")
     render_html("""
@@ -844,23 +845,47 @@ render_html(f"""
 if nav_page == "Overview":
 
     # Header Row
-    query_badge = f'<span class="query-pill">{current_tech}</span>'
-    render_html(f"""
-    <div class="page-title-row">
-        <div>
-            <h1 class="page-title">
-                Technology Intelligence Overview {query_badge}
-            </h1>
-            <div class="page-subtitle">
-                Synthesized scholarly research, patent velocity, and unsupervised semantic clusters.
+    if is_live_mode:
+        col_hdr1, col_hdr2 = st.columns([4.2, 1])
+        with col_hdr1:
+            query_badge = f'<span class="query-pill">{current_tech}</span>'
+            render_html(f"""
+            <div class="page-title-row" style="margin-bottom: 0;">
+                <div>
+                    <h1 class="page-title">
+                        Technology Intelligence Overview {query_badge}
+                    </h1>
+                    <div class="page-subtitle">
+                        Synthesized scholarly research, patent velocity, and unsupervised semantic clusters.
+                    </div>
+                </div>
+            </div>
+            """)
+        with col_hdr2:
+            render_html("<div style='height: 4px;'></div>")
+            if st.button("Reset to Baseline", key="hdr_reset_live_btn", use_container_width=True):
+                st.session_state["active_live_query"] = None
+                st.session_state["search_input_val"] = ""
+                st.cache_data.clear()
+                st.rerun()
+    else:
+        query_badge = f'<span class="query-pill">{current_tech}</span>'
+        render_html(f"""
+        <div class="page-title-row">
+            <div>
+                <h1 class="page-title">
+                    Technology Intelligence Overview {query_badge}
+                </h1>
+                <div class="page-subtitle">
+                    Synthesized scholarly research, patent velocity, and unsupervised semantic clusters.
+                </div>
             </div>
         </div>
-    </div>
-    """)
+        """)
 
-    # Main Search Bar (Perfect Alignment Form)
+    # Main Search Bar (Clean 2-Column Aligned Form)
     with st.form(key="main_page_search_form", clear_on_submit=False):
-        f_col1, f_col2, f_col3 = st.columns([3.8, 1.2, 0.8])
+        f_col1, f_col2 = st.columns([4.4, 1.1])
         with f_col1:
             form_query_val = st.text_input(
                 "Search Technology Domain",
@@ -869,19 +894,15 @@ if nav_page == "Overview":
                 label_visibility="collapsed",
             )
         with f_col2:
-            form_submitted = st.form_submit_button("Search OpenAlex", type="primary")
-        with f_col3:
-            reset_form_submitted = st.form_submit_button("Reset")
+            form_submitted = st.form_submit_button("Search OpenAlex", type="primary", use_container_width=True)
 
-    if form_submitted and form_query_val.strip():
-        st.session_state["active_live_query"] = form_query_val.strip()
-        st.session_state["search_input_val"] = form_query_val.strip()
-        st.cache_data.clear()
-        st.rerun()
-
-    if reset_form_submitted:
-        st.session_state["active_live_query"] = None
-        st.session_state["search_input_val"] = ""
+    if form_submitted:
+        if form_query_val.strip():
+            st.session_state["active_live_query"] = form_query_val.strip()
+            st.session_state["search_input_val"] = form_query_val.strip()
+        else:
+            st.session_state["active_live_query"] = None
+            st.session_state["search_input_val"] = ""
         st.cache_data.clear()
         st.rerun()
 
