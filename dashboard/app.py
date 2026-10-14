@@ -23,6 +23,7 @@ from mock.mock_data import (
 )
 from analytics.live_search import execute_live_search
 from analytics.insights import generate_research_insights
+from analytics.trend_score import classify_publication_trend
 
 
 def render_html(html_str):
@@ -565,6 +566,79 @@ st.markdown("""
         line-height: 1.5;
     }
 
+    /* Executive Hero Trend Classification Card */
+    .hero-trend-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.25rem;
+    }
+
+    .hero-trend-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding-bottom: 0.875rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .hero-classification-badge {
+        font-size: 0.875rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        padding: 0.35rem 0.85rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .hero-score-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.25rem 0.65rem;
+    }
+
+    .hero-trend-headline {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.01em;
+    }
+
+    .hero-trend-subtext {
+        font-size: 0.875rem;
+        color: #475569;
+        margin-bottom: 0.625rem;
+    }
+
+    .hero-trend-explanation {
+        font-size: 0.8125rem;
+        color: #334155;
+        line-height: 1.55;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #2563eb;
+        padding: 0.625rem 0.875rem;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 0.625rem;
+    }
+
+    .hero-trend-disclaimer {
+        font-size: 0.71875rem;
+        color: #64748b;
+        font-style: italic;
+    }
+
     /* Sidebar Styling */
     div[data-testid="stSidebar"] {
         background-color: #ffffff !important;
@@ -906,6 +980,45 @@ if nav_page == "Overview":
         st.cache_data.clear()
         st.rerun()
 
+    # =======================================================================
+    # EXECUTIVE RESEARCH TREND ANALYSIS HERO CARD
+    # =======================================================================
+    trend_classification = classify_publication_trend(current_indicators, min_activity=10)
+    tc = trend_classification
+
+    cagr_pill_html = (
+        f'<div class="hero-score-pill"><span style="color: #64748b; font-size: 0.75rem; font-weight: 500;">ANNUALIZED GROWTH</span><span style="font-size: 1.125rem; font-weight: 800; color: #0f172a;">{tc["cagr_pct"]:+.1f}%</span></div>'
+        if tc["cagr_pct"] is not None else ""
+    )
+
+    render_html(f"""
+    <div class="hero-trend-card">
+        <div class="hero-trend-top">
+            <div style="display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap;">
+                <span class="hero-classification-badge" style="background: {tc['badge_bg']}; color: {tc['badge_color']}; border: 1px solid {tc['badge_border']};">
+                    {tc['label'].upper()}
+                </span>
+                <div class="hero-score-pill">
+                    <span style="color: #64748b; font-size: 0.75rem; font-weight: 500;">COMPOSITE SCORE</span>
+                    <span style="font-size: 1.125rem; font-weight: 800; color: #0f172a;">{current_score} <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">/ 100</span></span>
+                </div>
+                {cagr_pill_html}
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 500;">
+                Publication Trajectory Classification
+            </div>
+        </div>
+        <div class="hero-trend-headline">{tc['headline']}</div>
+        <div class="hero-trend-subtext">{tc['subtext']}</div>
+        <div class="hero-trend-explanation">
+            <strong>Why this classification was assigned:</strong> {tc['explanation']}
+        </div>
+        <div class="hero-trend-disclaimer">
+            {tc['disclaimer']}
+        </div>
+    </div>
+    """)
+
     # Calculations for 4 Metric Cards
     total_papers = int(current_indicators["paper_count"].sum()) if not current_indicators.empty else 0
     total_patents = int(current_indicators["patent_count"].sum()) if ("patent_count" in current_indicators.columns and not current_indicators.empty) else 0
@@ -1060,20 +1173,21 @@ if nav_page == "Overview":
             """)
 
     with m4:
+        cagr_detail = f'Annualized CAGR: {tc["cagr_pct"]:+.1f}%' if tc["cagr_pct"] is not None else 'Sample Insufficient'
         render_html(f"""
         <div class="metric-card">
             <div>
                 <div class="metric-label-row">
                     <span class="metric-label">Trend Momentum</span>
-                    <span class="metric-tag">Composite</span>
+                    <span class="metric-tag">{tc['label']}</span>
                 </div>
                 <div class="metric-value">{current_score} <span class="metric-value-sub">/ 100</span></div>
                 <div class="metric-footnote">
-                    Classification: <strong>{current_score_meta['label']}</strong>
+                    Trajectory: <strong>{tc['label']}</strong>
                 </div>
             </div>
             <div style="font-size: 0.6875rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 0.375rem; margin-top: 0.375rem;">
-                5-factor weighted index
+                {cagr_detail}
             </div>
         </div>
         """)

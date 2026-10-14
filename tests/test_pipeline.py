@@ -214,7 +214,58 @@ class TestResearchInsights:
         assert insights["which_areas_stand_out"]["status"] == "insufficient_abstracts"
 
 
+class TestClassifyPublicationTrend:
+    """Tests for actual publication growth trend classification."""
+
+    def test_high_growth(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021, 2022], "paper_count": [100, 150, 250]})
+        res = classify_publication_trend(df)
+        assert res["label"] == "High Growth"
+        assert res["cagr_pct"] > 20.0
+        assert "rising rapidly" in res["headline"]
+
+    def test_moderate_growth(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021, 2022], "paper_count": [100, 110, 125]})
+        res = classify_publication_trend(df)
+        assert res["label"] == "Moderate Growth"
+        assert 5.0 <= res["cagr_pct"] <= 20.0
+        assert "increasing" in res["headline"]
+
+    def test_stable(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021, 2022], "paper_count": [100, 101, 102]})
+        res = classify_publication_trend(df)
+        assert res["label"] == "Stable"
+        assert -5.0 <= res["cagr_pct"] <= 5.0
+        assert "relatively steady" in res["headline"]
+
+    def test_low_growth(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021, 2022], "paper_count": [100, 92, 85]})
+        res = classify_publication_trend(df)
+        assert res["label"] == "Low Growth"
+        assert -20.0 <= res["cagr_pct"] < -5.0
+
+    def test_declining(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021, 2022], "paper_count": [100, 60, 30]})
+        res = classify_publication_trend(df)
+        assert res["label"] == "Declining"
+        assert res["cagr_pct"] < -20.0
+        assert "decreasing" in res["headline"]
+
+    def test_insufficient_data(self):
+        from analytics.trend_score import classify_publication_trend
+        df = pd.DataFrame({"year": [2020, 2021], "paper_count": [2, 3]})
+        res = classify_publication_trend(df, min_activity=10)
+        assert res["label"] == "Insufficient Data"
+        assert res["cagr_pct"] is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
 
 

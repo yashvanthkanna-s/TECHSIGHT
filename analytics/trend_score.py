@@ -202,3 +202,135 @@ def compute_trend_scores(indicators_df):
     result_df = pd.DataFrame(results)
     logger.info("Trend scores computed for %d technologies", len(result_df))
     return result_df
+
+
+def classify_publication_trend(yearly_df, min_activity=10):
+    """
+    Classify research trend based on actual annual publication growth rate (CAGR),
+    rather than directly from the composite score.
+
+    Thresholds:
+      - High Growth:     CAGR > 20%
+      - Moderate Growth: 5% to 20%
+      - Stable:          -5% to 5%
+      - Low Growth:      -20% to -5%
+      - Declining:       CAGR < -20%
+      - Insufficient Data: Total count < min_activity
+    """
+    disclaimer = "Important: A research trend classification describes publication activity, not commercial success or technology quality."
+
+    if yearly_df is None or yearly_df.empty:
+        return {
+            "label": "Insufficient Data",
+            "headline": "Insufficient historical data",
+            "subtext": "No publication records available for this query.",
+            "explanation": "No publication data was found across the observation window to classify a research trend.",
+            "cagr_pct": None,
+            "total_papers": 0,
+            "start_year": None,
+            "end_year": None,
+            "start_count": 0,
+            "end_count": 0,
+            "disclaimer": disclaimer,
+            "badge_bg": "#f1f5f9",
+            "badge_color": "#475569",
+            "badge_border": "#e2e8f0",
+        }
+
+    count_col = "paper_count" if "paper_count" in yearly_df.columns else "total_count"
+    df_sorted = yearly_df[yearly_df["year"] >= 2018].sort_values("year").copy() if "year" in yearly_df.columns else yearly_df.copy()
+    if df_sorted.empty:
+        df_sorted = yearly_df.sort_values("year").copy()
+
+    total_papers = int(df_sorted[count_col].sum())
+
+    if total_papers < min_activity:
+        return {
+            "label": "Insufficient Data",
+            "headline": "Insufficient reliable data to classify trend",
+            "subtext": "Retrieved volume is below the statistical threshold.",
+            "explanation": f"Total retrieved volume ({total_papers} works) is below the reliable threshold of {min_activity} publications across the observation period. TECHSIGHT requires adequate sample depth before assigning a trajectory classification.",
+            "cagr_pct": None,
+            "total_papers": total_papers,
+            "start_year": int(df_sorted["year"].iloc[0]) if not df_sorted.empty else 2018,
+            "end_year": int(df_sorted["year"].iloc[-1]) if not df_sorted.empty else 2026,
+            "start_count": int(df_sorted[count_col].iloc[0]) if not df_sorted.empty else 0,
+            "end_count": int(df_sorted[count_col].iloc[-1]) if not df_sorted.empty else 0,
+            "disclaimer": disclaimer,
+            "badge_bg": "#f8fafc",
+            "badge_color": "#64748b",
+            "badge_border": "#cbd5e1",
+        }
+
+    counts = df_sorted[count_col].values.astype(float)
+    n = len(counts)
+    start_year = int(df_sorted["year"].iloc[0])
+    end_year = int(df_sorted["year"].iloc[-1])
+    start_val = max(counts[0], 1.0)
+    end_val = max(counts[-1], 1.0)
+
+    if n >= 2:
+        cagr = ((end_val / start_val) ** (1.0 / (n - 1)) - 1.0) * 100.0
+    else:
+        cagr = 0.0
+
+    cagr_rounded = round(cagr, 1)
+
+    if cagr > 20.0:
+        label = "High Growth"
+        headline = "Research activity is rising rapidly"
+        subtext = "Publication growth is strong compared with the chosen historical period."
+        explanation = f"Assigned High Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (expanding from {int(start_val):,} to {int(end_val):,} papers between {start_year} and {end_year}), exceeding the +20% threshold."
+        badge_bg = "#ecfdf5"
+        badge_color = "#047857"
+        badge_border = "#a7f3d0"
+    elif cagr >= 5.0:
+        label = "Moderate Growth"
+        headline = "Research activity is increasing"
+        subtext = "Publication activity is growing, but not as rapidly as in the high-growth category."
+        explanation = f"Assigned Moderate Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (between the +5% and +20% thresholds) between {start_year} and {end_year}."
+        badge_bg = "#eff6ff"
+        badge_color = "#1d4ed8"
+        badge_border = "#bfdbfe"
+    elif cagr >= -5.0:
+        label = "Stable"
+        headline = "Research activity is relatively steady"
+        subtext = "Publication counts show little overall change."
+        explanation = f"Assigned Stable because publication output exhibited minimal net fluctuation ({cagr_rounded:+.1f}% annual change, within the −5% to +5% band) between {start_year} and {end_year}."
+        badge_bg = "#f1f5f9"
+        badge_color = "#334155"
+        badge_border = "#cbd5e1"
+    elif cagr >= -20.0:
+        label = "Low Growth"
+        headline = "Research activity is growing slowly"
+        subtext = "Publication growth is positive but comparatively weak over the selected period."
+        explanation = f"Assigned Low Growth because publication rate changed by {cagr_rounded:+.1f}% annually (within the −20% to −5% range) between {start_year} and {end_year}."
+        badge_bg = "#fefce8"
+        badge_color = "#854d0e"
+        badge_border = "#fef08a"
+    else:
+        label = "Declining"
+        headline = "Research activity is decreasing"
+        subtext = "Publication counts are falling over the selected comparison period."
+        explanation = f"Assigned Declining because publication volume contracted at an annualized rate of {cagr_rounded:+.1f}% (below the −20% threshold) between {start_year} and {end_year}."
+        badge_bg = "#fef2f2"
+        badge_color = "#b91c1c"
+        badge_border = "#fecaca"
+
+    return {
+        "label": label,
+        "headline": headline,
+        "subtext": subtext,
+        "explanation": explanation,
+        "cagr_pct": cagr_rounded,
+        "total_papers": total_papers,
+        "start_year": start_year,
+        "end_year": end_year,
+        "start_count": int(start_val),
+        "end_count": int(end_val),
+        "disclaimer": disclaimer,
+        "badge_bg": badge_bg,
+        "badge_color": badge_color,
+        "badge_border": badge_border,
+    }
+
