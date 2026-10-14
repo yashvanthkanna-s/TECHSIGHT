@@ -627,7 +627,7 @@ else:
 # ---------------------------------------------------------------------------
 # Top Platform Status Bar (Header)
 # ---------------------------------------------------------------------------
-data_snapshot_str = "Live OpenAlex Query" if is_live_mode else "Data Snapshot: 2018–2024"
+data_snapshot_str = "Live OpenAlex Query (2018–2026)" if is_live_mode else "Data Snapshot: 2018–2026"
 render_html(f"""
 <div class="top-platform-bar">
     <div class="platform-title-group">
@@ -681,7 +681,7 @@ if nav_page == "Overview":
         render_html("""
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; padding-top: 0.5rem;">
             <div style="font-size: 0.75rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.35rem 0.65rem; color: #334155; font-weight: 500;">
-                2018 – 2024
+                2018 – 2026
             </div>
             <button style="background: #4f46e5; color: white; border: none; border-radius: 6px; padding: 0.4rem 0.85rem; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
                 Export Data
@@ -931,9 +931,9 @@ if nav_page == "Overview":
 
     with col_chart:
         chart_title = (
-            (f"Annual Activity: {current_tech} (OpenAlex Papers vs. EPO Patents)" if total_patents > 0 else f"Annual Publication Volume: {current_tech} (2018–2024 OpenAlex API)")
+            (f"Annual Activity: {current_tech} (OpenAlex Papers vs. EPO Patents)" if total_patents > 0 else f"Annual Publication Volume: {current_tech} (2018–2026 OpenAlex API)")
             if is_live_mode else
-            "Annual Activity: Research Papers vs. Patent Disclosures (2018–2024)"
+            "Annual Activity: Research Papers vs. Patent Disclosures (2018–2026)"
         )
         legend_tags = (
             ('<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> OpenAlex Papers</span>'
@@ -1012,7 +1012,7 @@ if nav_page == "Overview":
         methodology_text = (
             "Scholarly records dynamically aggregated via OpenAlex API group_by endpoint. For registered patent volumes, inspect live filings on Google Patents or configure official EPO OPS API credentials."
             if is_live_mode else
-            "Normalized time-series indices from OpenAlex API and USPTO archives. Historical records reflect unified schema integration across 2018–2024."
+            "Normalized time-series indices from OpenAlex API and USPTO archives. Historical records reflect unified schema integration across 2018–2026."
         )
 
         render_html(f"""
@@ -1565,7 +1565,7 @@ elif nav_page == "Forecasting":
         else:
             last_y = h_data["year"].iloc[-1]
             last_v = h_data["paper_count"].iloc[-1]
-            pred_years = [last_y, 2025, 2026, 2027]
+            pred_years = [last_y, 2027, 2028, 2029]
             pred_vals = [last_v, int(last_v * 1.22), int(last_v * 1.48), int(last_v * 1.78)]
 
             fig_f1.add_trace(go.Scatter(
@@ -1618,7 +1618,7 @@ elif nav_page == "Forecasting":
 
             last_pat = h_data["patent_count"].iloc[-1]
             last_y = h_data["year"].iloc[-1]
-            pred_years = [last_y, 2025, 2026, 2027]
+            pred_years = [last_y, 2027, 2028, 2029]
             pred_pats = [last_pat, int(last_pat * 1.20), int(last_pat * 1.42), int(last_pat * 1.68)]
 
             fig_f2.add_trace(go.Scatter(

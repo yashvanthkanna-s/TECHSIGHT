@@ -30,8 +30,6 @@ _TOKEN_CACHE = {
 }
 
 
-
-
 def is_epo_configured():
     """Check if valid EPO OPS credentials are provided."""
     return bool(EPO_CONSUMER_KEY and EPO_CONSUMER_SECRET and EPO_CONSUMER_KEY != "your_epo_consumer_key_here")
@@ -75,7 +73,7 @@ def get_epo_access_token():
         return None
 
 
-def fetch_epo_patent_counts(query, start_year=2018, end_year=2024):
+def fetch_epo_patent_counts(query, start_year=2018, end_year=2026):
     """
     Fetch genuine aggregate patent counts per publication year from EPO OPS.
     Uses title/abstract Common Query Language: ta="{clean_query}" AND pd={year}

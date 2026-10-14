@@ -63,10 +63,10 @@ SEARCH_DOMAINS = {
 # cutoff and flag incomplete recent years in the dashboard.
 # ---------------------------------------------------------------------------
 START_YEAR = 2012
-END_YEAR = 2024  # Last complete year (adjust based on source coverage)
+END_YEAR = 2026  # Extended to 2026 to include live current-year research records
 
-# Years we consider potentially incomplete due to indexing delays
-INCOMPLETE_YEARS_WARNING = [2024]
+# Years we consider potentially incomplete due to patent indexing delays (18-month publication rule)
+INCOMPLETE_YEARS_WARNING = [2025, 2026]
 
 # ---------------------------------------------------------------------------
 # Data volume caps (per domain per source)

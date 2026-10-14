@@ -46,7 +46,7 @@ def _reconstruct_abstract(inverted_index):
         return None
 
 
-def fetch_live_yearly_counts(query, start_year=2018, end_year=2024):
+def fetch_live_yearly_counts(query, start_year=2018, end_year=2026):
     """
     Query OpenAlex group_by=publication_year to retrieve genuine aggregate
     publication volume per year.
@@ -410,7 +410,7 @@ def execute_live_search(query):
     6. Dynamically forecasts the next 3 years with confidence bounds.
     7. Performs Research-Patent Gap Analysis with Google Patents exploration link.
     """
-    yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2024)
+    yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2026)
     sample_docs = fetch_live_sample_documents(query, limit=25)
     topics = discover_live_topics(sample_docs, max_k=4)
     trend_score = calculate_live_trend_score(yearly_df)
@@ -421,7 +421,7 @@ def execute_live_search(query):
     sample_patents = []
     if epo_active:
         logger.info("EPO OPS configured: fetching live worldwide patent statistics for '%s'...", query)
-        patent_counts = fetch_epo_patent_counts(query, start_year=2018, end_year=2024)
+        patent_counts = fetch_epo_patent_counts(query, start_year=2018, end_year=2026)
         if patent_counts:
             yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
         else:
