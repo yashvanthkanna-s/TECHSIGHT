@@ -20,6 +20,11 @@ from config import (
     OPENALEX_API_KEY, OPENALEX_EMAIL,
     REQUEST_TIMEOUT, MAX_RETRIES, RETRY_DELAY,
 )
+from ingestion.epo_connector import (
+    is_epo_configured,
+    fetch_epo_patent_counts,
+    fetch_epo_sample_patents,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -309,11 +314,11 @@ def generate_live_forecast(yearly_df, horizon=3):
     return pd.DataFrame(rows)
 
 
-def analyze_research_patent_gap(yearly_papers_df, query):
+def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
     """
     Research-Patent Gap Analysis:
     Compares scholarly publication velocity with intellectual property filings.
-    Provides direct Google Patents verification link.
+    Provides direct Google Patents verification link and EPO OPS status.
     """
     encoded_query = urllib.parse.quote_plus(query)
     google_patents_url = f"https://patents.google.com/?q={encoded_query}"
@@ -324,40 +329,69 @@ def analyze_research_patent_gap(yearly_papers_df, query):
             "ratio_label": "N/A",
             "insight": "Run search to calculate gap analysis.",
             "google_patents_url": google_patents_url,
+            "epo_active": epo_active,
         }
 
     cagr = yearly_papers_df.get("growth_pct", pd.Series([0])).mean()
     total_papers = int(yearly_papers_df["paper_count"].sum())
+    total_patents = int(yearly_papers_df["patent_count"].sum()) if "patent_count" in yearly_papers_df.columns else 0
 
-    # Formulate gap signal based on academic expansion velocity
-    if cagr > 20.0:
-        gap_status = "Academic R&D Surge (Pre-Commercial Phase)"
-        gap_insight = (
-            "Scientific publication velocity is expanding rapidly. This pattern typically signals "
-            "early-stage technological maturation preceding widespread industrial patent filings."
-        )
-        ratio_indicator = "High Scientific Velocity"
-    elif cagr > 8.0:
-        gap_status = "Active Translation Phase"
-        gap_insight = (
-            "Research growth is steady with active commercial interest. Technology is transitioning "
-            "from academic discovery toward corporate intellectual property protection."
-        )
-        ratio_indicator = "Balanced R&D / IP Pipeline"
+    if epo_active and total_patents > 0:
+        ratio = total_papers / max(total_patents, 1)
+        if ratio > 5.0:
+            gap_status = "High Academic Precedence (IP Gap Detected)"
+            gap_insight = (
+                f"Scholarly publication volume ({total_papers:,} papers) significantly outpaces worldwide patent filings ({total_patents:,} patents via EPO OPS). "
+                "This indicates high fundamental research activity that has not yet been fully translated into industrial patents."
+            )
+            ratio_indicator = f"Paper-to-Patent Ratio: {ratio:.1f}:1"
+        elif ratio < 0.8:
+            gap_status = "Commercial & Industrial Dominance"
+            gap_insight = (
+                f"Worldwide patent filings ({total_patents:,} patents) exceed academic research volume ({total_papers:,} papers). "
+                "Industry players are actively protecting proprietary implementations in mature engineering domains."
+            )
+            ratio_indicator = f"Patent Heavy ({ratio:.1f}:1)"
+        else:
+            gap_status = "Balanced Translation Phase"
+            gap_insight = (
+                f"Balanced trajectory between scientific research ({total_papers:,} papers) and patent filings ({total_patents:,} patents). "
+                "Demonstrates healthy active translation from scholarly labs into intellectual property."
+            )
+            ratio_indicator = f"Balanced ({ratio:.1f}:1)"
     else:
-        gap_status = "Mature / Consolidated Stage"
-        gap_insight = (
-            "Publication growth has stabilized, indicative of established engineering paradigms "
-            "where industrial patents typically dominate incremental scientific papers."
-        )
-        ratio_indicator = "Commercial Dominance"
+        # Formulate gap signal based on academic expansion velocity when patent API key is pending
+        if cagr > 20.0:
+            gap_status = "Academic R&D Surge (Pre-Commercial Phase)"
+            gap_insight = (
+                "Scientific publication velocity is expanding rapidly. This pattern typically signals "
+                "early-stage technological maturation preceding widespread industrial patent filings."
+            )
+            ratio_indicator = "High Scientific Velocity"
+        elif cagr > 8.0:
+            gap_status = "Active Translation Phase"
+            gap_insight = (
+                "Research growth is steady with active commercial interest. Technology is transitioning "
+                "from academic discovery toward corporate intellectual property protection."
+            )
+            ratio_indicator = "Balanced R&D / IP Pipeline"
+        else:
+            gap_status = "Mature / Consolidated Stage"
+            gap_insight = (
+                "Publication growth has stabilized, indicative of established engineering paradigms "
+                "where industrial patents typically dominate incremental scientific papers."
+            )
+            ratio_indicator = "Commercial Dominance"
 
     return {
         "status": gap_status,
         "ratio_label": ratio_indicator,
         "insight": gap_insight,
         "total_papers": total_papers,
+        "total_patents": total_patents,
         "google_patents_url": google_patents_url,
+        "epo_active": epo_active,
+        "epo_registration_url": "https://developers.epo.org/",
         "disclaimer": (
             "Research–Patent Gap is an analytical indicator for technology intelligence exploration, "
             "not a guarantee of commercial opportunity."
@@ -369,25 +403,46 @@ def execute_live_search(query):
     """
     Orchestrate full end-to-end live analysis for an arbitrary technology query:
     1. Fetches genuine annual aggregate publication volume via OpenAlex group_by.
-    2. Fetches sample paper titles & abstracts.
-    3. Runs unsupervised TF-IDF + KMeans clustering safely.
-    4. Calculates multi-factor trend momentum score.
-    5. Dynamically forecasts the next 3 years with confidence bounds.
-    6. Performs Research-Patent Gap Analysis with Google Patents exploration link.
+    2. Fetches sample paper titles & abstracts from OpenAlex.
+    3. Queries European Patent Office (EPO OPS) for live worldwide patent counts when credentials exist.
+    4. Runs unsupervised TF-IDF + KMeans clustering on abstracts.
+    5. Calculates multi-factor trend momentum score.
+    6. Dynamically forecasts the next 3 years with confidence bounds.
+    7. Performs Research-Patent Gap Analysis with Google Patents exploration link.
     """
     yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2024)
     sample_docs = fetch_live_sample_documents(query, limit=25)
     topics = discover_live_topics(sample_docs, max_k=4)
     trend_score = calculate_live_trend_score(yearly_df)
     forecast = generate_live_forecast(yearly_df, horizon=3)
-    gap = analyze_research_patent_gap(yearly_df, query)
+
+    # EPO OPS Integration
+    epo_active = is_epo_configured()
+    sample_patents = []
+    if epo_active:
+        logger.info("EPO OPS configured: fetching live worldwide patent statistics for '%s'...", query)
+        patent_counts = fetch_epo_patent_counts(query, start_year=2018, end_year=2024)
+        if patent_counts:
+            yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
+        else:
+            yearly_df["patent_count"] = 0
+        sample_patents = fetch_epo_sample_patents(query, limit=10)
+    else:
+        yearly_df["patent_count"] = 0
+
+    yearly_df["total_count"] = yearly_df["paper_count"] + yearly_df["patent_count"]
+
+    gap = analyze_research_patent_gap(yearly_df, query, epo_active=epo_active)
+    gap["sample_patents"] = sample_patents
 
     return {
         "query": query,
         "yearly_df": yearly_df,
         "sample_docs": sample_docs,
+        "sample_patents": sample_patents,
         "topics": topics,
         "trend_score": trend_score,
         "forecast": forecast,
         "gap": gap,
+        "epo_active": epo_active,
     }

@@ -560,8 +560,10 @@ if is_live_mode:
         live_result = run_live_search_cached(current_tech)
 
     current_indicators = live_result["yearly_df"].copy()
-    current_indicators["patent_count"] = 0
-    current_indicators["total_count"] = current_indicators["paper_count"]
+    if "patent_count" not in current_indicators.columns:
+        current_indicators["patent_count"] = 0
+    if "total_count" not in current_indicators.columns:
+        current_indicators["total_count"] = current_indicators["paper_count"] + current_indicators["patent_count"]
     current_indicators["technology_name"] = current_tech
 
     current_score = live_result["trend_score"]["score"]
@@ -782,21 +784,40 @@ if nav_page == "Overview":
 
     with m2:
         if is_live_mode:
-            render_html(f"""
-            <div class="metric-box">
-                <div>
-                    <div class="metric-header-row">
-                        <span class="metric-tag-label">Patent Data Status</span>
-                        <span class="metric-pill-tag tag-cyan">Google Patents</span>
+            if gap_data.get("epo_active") and total_patents > 0:
+                render_html(f"""
+                <div class="metric-box">
+                    <div>
+                        <div class="metric-header-row">
+                            <span class="metric-tag-label">Patent Filings</span>
+                            <span class="metric-pill-tag tag-cyan">EPO OPS Live</span>
+                        </div>
+                        <div class="metric-big-number">{total_patents:,}</div>
+                        <div class="metric-sub-detail">Worldwide patents registered (EPO DocDB)</div>
                     </div>
-                    <div class="metric-big-number" style="font-size: 1.25rem; font-weight: 800; color: #0891b2; margin-top: 0.2rem;">Live Links Active</div>
-                    <div class="metric-sub-detail">EPO OPS API Ready · Verified Portal</div>
+                    <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
+                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
+                    </div>
                 </div>
-                <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem;">
-                    <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect {current_tech} Patents ↗</a>
+                """)
+            else:
+                render_html(f"""
+                <div class="metric-box">
+                    <div>
+                        <div class="metric-header-row">
+                            <span class="metric-tag-label">Patent Data Status</span>
+                            <span class="metric-pill-tag tag-cyan">EPO OPS Ready</span>
+                        </div>
+                        <div class="metric-big-number" style="font-size: 1.15rem; font-weight: 800; color: #0891b2; margin-top: 0.2rem;">Live Links Active</div>
+                        <div class="metric-sub-detail">Add Free EPO Key in .env for Live Ingestion</div>
+                    </div>
+                    <div style="font-size: 0.74rem; font-weight: 600; margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center;">
+                        <a href="{gap_data['google_patents_url']}" target="_blank" style="color: #0284c7; text-decoration: none;">Inspect Patents ↗</a>
+                        <span style="color: #cbd5e1;">·</span>
+                        <a href="https://developers.epo.org/" target="_blank" style="color: #4f46e5; text-decoration: none; font-weight: 700;">Get Free EPO Key ↗</a>
+                    </div>
                 </div>
-            </div>
-            """)
+                """)
         else:
             render_html(f"""
             <div class="metric-box">
@@ -910,12 +931,13 @@ if nav_page == "Overview":
 
     with col_chart:
         chart_title = (
-            f"Annual Publication Volume: {current_tech} (2018–2024 OpenAlex API)"
+            (f"Annual Activity: {current_tech} (OpenAlex Papers vs. EPO Patents)" if total_patents > 0 else f"Annual Publication Volume: {current_tech} (2018–2024 OpenAlex API)")
             if is_live_mode else
             "Annual Activity: Research Papers vs. Patent Disclosures (2018–2024)"
         )
         legend_tags = (
-            '<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> OpenAlex Papers</span>'
+            ('<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> OpenAlex Papers</span>'
+             + ('<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span> EPO Patents</span>' if total_patents > 0 else ''))
             if is_live_mode else
             '<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> Papers</span><span style="display: flex; align-items: center; gap: 0.35rem;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span> Patents</span>'
         )
@@ -950,8 +972,8 @@ if nav_page == "Overview":
             hovertemplate="<b>Papers</b>: %{y:,}<br>Year: %{x}<extra></extra>",
         ))
 
-        # Patent Filings Line (if not live or if available)
-        if not is_live_mode:
+        # Patent Filings Line (if patents exist or in preset mode)
+        if total_patents > 0 or not is_live_mode:
             patents = chart_data["patent_count"].tolist()
             fig_dual.add_trace(go.Scatter(
                 x=years,
