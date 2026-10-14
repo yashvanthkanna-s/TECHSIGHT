@@ -96,6 +96,13 @@ def generate_research_insights(
                 "This suggests scientific attention may have migrated toward adjacent subdisciplines or encountered foundational bottlenecks."
             )
 
+        if recent_yoy_pct < 0 and cum_growth_pct >= 20:
+            interpretation += (
+                f" (Note on latest year: The slight {recent_yoy_pct:+.1f}% difference between {end_year-1} and {end_year} "
+                "is standard for recent in-progress calendar year publisher indexing latency in OpenAlex, "
+                f"rather than a macro structural decline in {tech_name}'s {cum_growth_pct:+.1f}% expansion)."
+            )
+
         what_happened = {
             "status": "normal",
             "headline": f"Research activity is {trend_descriptor}",

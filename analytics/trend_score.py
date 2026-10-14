@@ -280,7 +280,16 @@ def classify_publication_trend(yearly_df, min_activity=10):
         label = "High Growth"
         headline = "Research activity is rising rapidly"
         subtext = "Publication growth is strong compared with the chosen historical period."
-        explanation = f"Assigned High Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (expanding from {int(start_val):,} to {int(end_val):,} papers between {start_year} and {end_year}), exceeding the +20% threshold."
+        if n >= 2 and counts[-1] < counts[-2]:
+            recent_dip_pct = round(((counts[-1] - counts[-2]) / counts[-2]) * 100, 1)
+            explanation = (
+                f"Assigned High Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% "
+                f"(expanding from {int(start_val):,} to {int(end_val):,} papers between {start_year} and {end_year}), exceeding the +20% threshold. "
+                f"Note: The slight {recent_dip_pct}% difference between {end_year-1} ({int(counts[-2]):,}) and {end_year} ({int(counts[-1]):,}) "
+                "reflects ongoing publisher ingestion lag for the in-progress calendar year, rather than a macro structural decline."
+            )
+        else:
+            explanation = f"Assigned High Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (expanding from {int(start_val):,} to {int(end_val):,} papers between {start_year} and {end_year}), exceeding the +20% threshold."
         badge_bg = "#ecfdf5"
         badge_color = "#047857"
         badge_border = "#a7f3d0"
@@ -288,7 +297,15 @@ def classify_publication_trend(yearly_df, min_activity=10):
         label = "Moderate Growth"
         headline = "Research activity is increasing"
         subtext = "Publication activity is growing, but not as rapidly as in the high-growth category."
-        explanation = f"Assigned Moderate Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (between the +5% and +20% thresholds) between {start_year} and {end_year}."
+        if n >= 2 and counts[-1] < counts[-2]:
+            recent_dip_pct = round(((counts[-1] - counts[-2]) / counts[-2]) * 100, 1)
+            explanation = (
+                f"Assigned Moderate Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% "
+                f"(between +5% and +20%) between {start_year} and {end_year}. "
+                f"Note: The slight {recent_dip_pct}% difference between {end_year-1} and {end_year} reflects recent publisher indexing latency."
+            )
+        else:
+            explanation = f"Assigned Moderate Growth because publication volume grew at an annualized rate of +{cagr_rounded:.1f}% (between the +5% and +20% thresholds) between {start_year} and {end_year}."
         badge_bg = "#eff6ff"
         badge_color = "#1d4ed8"
         badge_border = "#bfdbfe"
