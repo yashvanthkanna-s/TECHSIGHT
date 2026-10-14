@@ -31,7 +31,7 @@ class TestMockData:
         assert len(df) > 0
         assert "year" in df.columns
         assert df["year"].min() >= 2012
-        assert df["year"].max() <= 2024
+        assert df["year"].max() <= 2026
 
     def test_technologies(self):
         from mock.mock_data import get_technologies
@@ -48,7 +48,7 @@ class TestMockData:
         from mock.mock_data import get_forecasts
         df = get_forecasts()
         assert len(df) > 0
-        assert all(y > 2024 for y in df["year"])
+        assert all(y > 2026 for y in df["year"])
 
 
 class TestProcessing:

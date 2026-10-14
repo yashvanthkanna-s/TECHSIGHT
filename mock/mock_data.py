@@ -97,20 +97,20 @@ AUTHOR_LAST = ["Zhang", "Wang", "Li", "Smith", "Johnson", "Kim", "Patel",
 # ---------------------------------------------------------------------------
 
 def _yearly_counts():
-    """Return realistic publication counts per domain per year (2012-2024)."""
-    years = list(range(2012, 2025))
+    """Return realistic publication counts per domain per year (2012-2026)."""
+    years = list(range(2012, 2027))
 
     # Solid-state batteries: steady growth
-    ssb_papers  = [35, 42, 51, 60, 75, 95, 120, 150, 185, 230, 280, 340, 370]
-    ssb_patents = [12, 15, 18, 22, 28, 35, 45,  58,  72,  90, 110, 135, 125]
+    ssb_papers  = [35, 42, 51, 60, 75, 95, 120, 150, 185, 230, 280, 340, 370, 415, 460]
+    ssb_patents = [12, 15, 18, 22, 28, 35, 45,  58,  72,  90, 110, 135, 125, 142, 158]
 
     # Quantum computing: accelerating growth
-    qc_papers   = [80, 95, 110, 130, 155, 190, 240, 310, 400, 520, 650, 800, 900]
-    qc_patents  = [10, 12, 15,  18,  25,  35,  50,  70,  95, 130, 175, 230, 260]
+    qc_papers   = [80, 95, 110, 130, 155, 190, 240, 310, 400, 520, 650, 800, 900, 1060, 1240]
+    qc_patents  = [10, 12, 15,  18,  25,  35,  50,  70,  95, 130, 175, 230, 260,  315,  375]
 
     # Generative AI: exponential recent growth
-    gai_papers  = [20, 25, 30, 35, 42, 55, 80, 130, 250, 500, 1000, 1800, 2500]
-    gai_patents = [ 5,  6,  8, 10, 12, 18, 30,  55, 100, 200,  400,  700,  950]
+    gai_papers  = [20, 25, 30, 35, 42, 55, 80, 130, 250, 500, 1000, 1800, 2500, 3600, 4900]
+    gai_patents = [ 5,  6,  8, 10, 12, 18, 30,  55, 100, 200,  400,  700,  950, 1380, 1890]
 
     return {
         "solid_state_batteries": {"years": years, "papers": ssb_papers, "patents": ssb_patents},
@@ -218,7 +218,7 @@ def get_yearly_indicators():
                 "paper_count": papers,
                 "total_count": papers + patents,
                 "avg_citations": round(np.random.lognormal(2, 0.8), 1),
-                "is_complete": year < 2024,
+                "is_complete": year < 2025,
             })
         tech_id += 1
 
@@ -288,7 +288,7 @@ def get_trend_scores():
 
 
 def get_forecasts():
-    """Return forecast predictions for 2025-2027."""
+    """Return forecast predictions for 2027-2029."""
     counts = _yearly_counts()
     forecasts = []
 
@@ -301,7 +301,7 @@ def get_forecasts():
         for series, values in [("paper_count", papers), ("patent_count", patents)]:
             recent_growth = (values[-1] - values[-3]) / 2
             last_val = values[-1]
-            for j, year in enumerate([2025, 2026, 2027]):
+            for j, year in enumerate([2027, 2028, 2029]):
                 pred = last_val + recent_growth * (j + 1)
                 forecasts.append({
                     "technology_name": tech_name,
