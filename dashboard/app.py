@@ -24,6 +24,7 @@ from mock.mock_data import (
 from analytics.live_search import execute_live_search
 from analytics.insights import generate_research_insights
 from analytics.trend_score import classify_publication_trend
+from dashboard.components.analysis_loader import create_analysis_loader
 
 
 def render_html(html_str):
@@ -781,8 +782,10 @@ with st.sidebar:
 
     if sb_search_clicked:
         if sb_search_val.strip():
-            st.session_state["active_live_query"] = sb_search_val.strip()
-            st.session_state["search_input_val"] = sb_search_val.strip()
+            query_clean = sb_search_val.strip()
+            st.session_state["active_live_query"] = query_clean
+            st.session_state["search_input_val"] = query_clean
+            st.session_state.pop(f"live_cache_{query_clean.lower()}", None)
         else:
             st.session_state["active_live_query"] = None
             st.session_state["search_input_val"] = ""
@@ -820,10 +823,42 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 is_live_mode = bool(st.session_state.get("active_live_query"))
 
+# ---------------------------------------------------------------------------
+# Top Platform Status Bar
+# ---------------------------------------------------------------------------
+data_source_label = "OpenAlex & EPO OPS Live" if is_live_mode else "Curated Index Archive"
+render_html(f"""
+<div class="platform-header">
+    <div class="platform-brand">
+        <div class="brand-mark">TS</div>
+        <div>
+            <div class="brand-name">TECHSIGHT Analytics</div>
+            <div class="brand-subtitle">Commercial Technology & Intellectual Property Intelligence</div>
+        </div>
+    </div>
+    <div class="header-metadata">
+        <span class="status-badge status-badge-blue">2018 – 2026</span>
+        <span class="status-badge">{data_source_label}</span>
+    </div>
+</div>
+""")
+
 if is_live_mode:
     current_tech = st.session_state["active_live_query"]
-    with st.spinner(f"Ingesting scientific records for '{current_tech}'..."):
-        live_result = run_live_search_cached(current_tech)
+    cache_key = f"live_cache_{current_tech.lower().strip()}"
+
+    if cache_key in st.session_state:
+        live_result = st.session_state[cache_key]
+    else:
+        update_loader, complete_loader, fail_loader = create_analysis_loader(current_tech)
+        try:
+            live_result = execute_live_search(current_tech, progress_callback=update_loader)
+            st.session_state[cache_key] = live_result
+            complete_loader()
+        except Exception as e:
+            fail_loader(f"Analysis could not be completed: {str(e)}")
+            st.error(f"Analysis could not be completed for '{current_tech}'. Please try another search term.")
+            st.stop()
 
     current_indicators = live_result["yearly_df"].copy()
     if "patent_count" not in current_indicators.columns:
@@ -892,27 +927,6 @@ else:
     live_forecast_patents_data = pd.DataFrame()
 
 
-# ---------------------------------------------------------------------------
-# Top Platform Status Bar
-# ---------------------------------------------------------------------------
-data_source_label = "OpenAlex Live Stream" if is_live_mode else "Curated Index Archive"
-render_html(f"""
-<div class="platform-header">
-    <div class="platform-brand">
-        <div class="brand-mark">TS</div>
-        <div>
-            <div class="brand-name">TECHSIGHT Analytics</div>
-            <div class="brand-subtitle">Commercial Technology & Intellectual Property Intelligence</div>
-        </div>
-    </div>
-    <div class="header-metadata">
-        <span class="status-badge status-badge-blue">2018 – 2026</span>
-        <span class="status-badge">{data_source_label}</span>
-    </div>
-</div>
-""")
-
-
 # ===========================================================================
 # PAGE 1: OVERVIEW
 # ===========================================================================
@@ -968,12 +982,14 @@ if nav_page == "Overview":
                 label_visibility="collapsed",
             )
         with f_col2:
-            form_submitted = st.form_submit_button("Search OpenAlex", type="primary", use_container_width=True)
+            form_submitted = st.form_submit_button("Analyze Technology", type="primary", use_container_width=True)
 
     if form_submitted:
         if form_query_val.strip():
-            st.session_state["active_live_query"] = form_query_val.strip()
-            st.session_state["search_input_val"] = form_query_val.strip()
+            query_clean = form_query_val.strip()
+            st.session_state["active_live_query"] = query_clean
+            st.session_state["search_input_val"] = query_clean
+            st.session_state.pop(f"live_cache_{query_clean.lower()}", None)
         else:
             st.session_state["active_live_query"] = None
             st.session_state["search_input_val"] = ""

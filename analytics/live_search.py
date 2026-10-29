@@ -402,7 +402,7 @@ def analyze_research_patent_gap(yearly_papers_df, query, epo_active=False):
     }
 
 
-def execute_live_search(query):
+def execute_live_search(query, progress_callback=None):
     """
     Orchestrate full end-to-end live analysis for an arbitrary technology query:
     1. Fetches genuine annual aggregate publication volume via OpenAlex group_by (2018–2026).
@@ -413,17 +413,30 @@ def execute_live_search(query):
     6. Dynamically forecasts the next 3 years (2027–2029) with 80% confidence bounds.
     7. Generates official EPO Espacenet exploration link for patent inspection.
     """
+    def report(stage, percent=None, custom_msg=None):
+        if progress_callback:
+            try:
+                progress_callback(stage, percent, custom_msg)
+            except Exception:
+                pass
+
+    report("research", 10, "Retrieving global publication volume (OpenAlex)...")
     yearly_df = fetch_live_yearly_counts(query, start_year=2018, end_year=2026)
+
+    report("sample_docs", 25, "Ingesting recent research papers and abstracts...")
     sample_docs = fetch_live_sample_documents(query, limit=25)
-    topics = discover_live_topics(sample_docs, max_k=4)
-    trend_score = calculate_live_trend_score(yearly_df)
 
     # Official EPO OPS Patent Integration
     epo_active = is_epo_configured()
     sample_patents = []
     if epo_active:
-        logger.info("EPO OPS configured: querying official European Patent Office for '%s'...", query)
-        patent_counts = fetch_epo_patent_counts(query, start_year=2018, end_year=2026)
+        report("patents", 35, "Searching worldwide patent registries (European Patent Office)...")
+        patent_counts = fetch_epo_patent_counts(
+            query,
+            start_year=2018,
+            end_year=2026,
+            progress_callback=progress_callback,
+        )
         if patent_counts:
             yearly_df["patent_count"] = yearly_df["year"].map(lambda y: patent_counts.get(y, 0))
         else:
@@ -434,11 +447,20 @@ def execute_live_search(query):
 
     yearly_df["total_count"] = yearly_df["paper_count"] + yearly_df["patent_count"]
 
+    report("topics", 75, "Discovering key research topics and subfields...")
+    topics = discover_live_topics(sample_docs, max_k=4)
+
+    report("trends", 85, "Evaluating composite trend scores and momentum...")
+    trend_score = calculate_live_trend_score(yearly_df)
+
+    report("forecast", 92, "Generating predictive growth forecasts and patent gap...")
     forecast_papers = generate_live_forecast(yearly_df, horizon=3, target_col="paper_count")
     forecast_patents = generate_live_forecast(yearly_df, horizon=3, target_col="patent_count") if epo_active else pd.DataFrame()
 
     gap = analyze_research_patent_gap(yearly_df, query, epo_active=epo_active)
     gap["sample_patents"] = sample_patents
+
+    report("complete", 100, "Analysis complete — Live intelligence ready")
 
     return {
         "query": query,
